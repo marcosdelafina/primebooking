@@ -1,0 +1,38 @@
+# Node / Bun
+node_modules/
+dist/
+.cache/
+.bun/
+
+# Locks (use apenas UM)
+package-lock.json
+# ou, se usar npm:
+# bun.lockb
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+bun-debug.log*
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Debug / temporário
+debug_*.js
+debug_*.sql
+estrutura.txt
+
+# Supabase CLI temp
+supabase/.temp/
+supabase/functions/.env
+supabase/functions/.env.*
+
+# Agent Skills
+.agent/
