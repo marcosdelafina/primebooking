@@ -114,3 +114,27 @@ export const formatCEP = (value: string): string => {
         .replace(/(\d{5})(\d)/, '$1-$2')
         .substring(0, 9);
 };
+
+/**
+ * Formata valor para moeda (BRL)
+ * Recebe string '12345' e retorna '123,45'
+ */
+export const formatCurrency = (value: string): string => {
+    const clean = value.replace(/\D/g, '');
+    if (!clean) return '0,00';
+
+    const number = parseInt(clean) / 100;
+    return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(number);
+};
+
+/**
+ * Converte string formatada (1.234,56) para número (1234.56)
+ */
+export const parseCurrency = (value: string | number): number => {
+    if (typeof value === 'number') return value;
+    const clean = value.replace(/[^\d,]/g, '').replace(',', '.');
+    return parseFloat(clean) || 0;
+};

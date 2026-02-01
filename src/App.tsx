@@ -17,6 +17,8 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import ServicesPage from "@/pages/admin/ServicesPage";
 import ProfessionalsPage from "@/pages/admin/ProfessionalsPage";
 import EnterpriseSettingsPage from "@/pages/admin/EnterpriseSettingsPage";
+import ClientsPage from "@/pages/admin/ClientsPage";
+import AppointmentsPage from "@/pages/admin/AppointmentsPage";
 
 // Client Pages
 import ClientExplorePage from "@/pages/client/ClientExplorePage";
@@ -92,9 +94,9 @@ function AppRoutes() {
       <Route path="/admin/professionals/:id" element={<ProtectedRoute><ProfessionalsPage /></ProtectedRoute>} />
 
       {/* Placeholder routes */}
-      <Route path="/admin/clients" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-      <Route path="/admin/appointments" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-      <Route path="/admin/appointments/new" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
+      <Route path="/admin/appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
+      <Route path="/admin/appointments/new" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute><EnterpriseSettingsPage /></ProtectedRoute>} />
 
       {/* Client Booking Routes (Public) */}

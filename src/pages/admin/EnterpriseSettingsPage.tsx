@@ -27,13 +27,13 @@ export default function EnterpriseSettingsPage() {
 
     const { data: empresa, isLoading } = useQuery({
         queryKey: ['empresa', empresaId],
-        queryFn: () => getEmpresa(empresaId).then((res) => res.data),
+        queryFn: () => getEmpresa(empresaId),
         enabled: !!empresaId,
     });
 
     const { data: estados = [] } = useQuery({
         queryKey: ['estados'],
-        queryFn: () => getEstados().then((res) => res.data),
+        queryFn: () => getEstados(),
     });
 
     const form = useForm<EmpresaSettingsFormData>({
@@ -57,7 +57,7 @@ export default function EnterpriseSettingsPage() {
 
     const { data: municipios = [] } = useQuery({
         queryKey: ['municipios', selectedEstado?.codigo_ibge_uf],
-        queryFn: () => getMunicipios(selectedEstado?.codigo_ibge_uf).then((res) => res.data),
+        queryFn: () => getMunicipios(selectedEstado?.codigo_ibge_uf),
         enabled: !!selectedEstado?.codigo_ibge_uf,
     });
 

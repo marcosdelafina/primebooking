@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -53,6 +54,7 @@ import { useToast } from '@/hooks/use-toast';
 import { servicoSchema, type ServicoFormData } from '@/lib/validations';
 import type { Servico } from '@/types/entities';
 import { cn } from '@/lib/utils';
+import { formatCurrency, parseCurrency } from '@/lib/document-utils';
 
 // Service Card Component
 function ServiceCard({
@@ -66,7 +68,7 @@ function ServiceCard({
   onDelete: () => void;
   onToggleActive: (active: boolean) => void;
 }) {
-  const formatCurrency = (value: number) => {
+  const displayPrice = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -120,7 +122,7 @@ function ServiceCard({
                 </div>
                 <div className="flex items-center gap-1.5 font-medium text-primary">
                   <DollarSign className="h-4 w-4" />
-                  <span>{formatCurrency(service.preco)}</span>
+                  <span>{displayPrice(service.preco)}</span>
                 </div>
                 {service.categoria && (
                   <Badge variant="outline" className="text-xs">
@@ -186,6 +188,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getServicos, createServico, updateServico, deleteServico } from '@/lib/supabase-services';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
 // ... (ServiceCard and EmptyState components remain similar but updated below)
 
@@ -209,6 +212,9 @@ export default function ServicesPage() {
     queryFn: () => getServicos(empresaId),
     enabled: !!empresaId,
   });
+
+  // Realtime
+  useSupabaseRealtime('servicos', empresaId, [['servicos', empresaId]]);
 
   // Mutations
   const createMutation = useMutation({
@@ -253,6 +259,26 @@ export default function ServicesPage() {
       categoria: '',
     },
   });
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      setSelectedService(null);
+      form.reset({
+        nome: '',
+        descricao: '',
+        duracao_min: 30,
+        preco: 0,
+        ativo: true,
+        categoria: '',
+      });
+      setIsFormOpen(true);
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('action');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, form]);
 
   // Filtered services
   const filteredServices = useMemo(() => {
@@ -347,7 +373,7 @@ export default function ServicesPage() {
               Gerencie os serviços oferecidos pela sua empresa.
             </p>
           </div>
-          <Button onClick={openCreateForm} className="shrink-0">
+          <Button onClick={openCreateForm} className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
             <Plus className="h-4 w-4 mr-2" />
             Novo Serviço
           </Button>
@@ -492,11 +518,12 @@ export default function ServicesPage() {
                         <FormLabel>Preço (R$)</FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            placeholder="0,00"
+                            value={formatCurrency(String(Math.round((parseCurrency(field.value) * 100))))}
+                            onChange={(e) => {
+                              const numericValue = parseCurrency(e.target.value);
+                              field.onChange(numericValue);
+                            }}
                           />
                         </FormControl>
                         <FormMessage />

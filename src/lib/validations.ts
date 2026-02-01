@@ -80,7 +80,17 @@ export type ServicoFormData = z.infer<typeof servicoSchema>;
 export const profissionalSchema = z.object({
   nome: nameSchema,
   email: emailSchema,
+  telefone: phoneSchema,
   servicos_ids: z.array(z.string()).min(1, 'Selecione pelo menos um serviço'),
+  disponibilidade: z.record(
+    z.array(
+      z.object({
+        inicio: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Horário inválido'),
+        fim: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Horário inválido'),
+        ativo: z.boolean().default(true),
+      })
+    )
+  ).default({}),
   ativo: z.boolean().default(true),
 });
 
@@ -120,3 +130,26 @@ export const empresaSettingsSchema = z.object({
 });
 
 export type EmpresaSettingsFormData = z.infer<typeof empresaSettingsSchema>;
+
+// Client form schema
+export const clienteSchema = z.object({
+  nome: nameSchema,
+  telefone: phoneSchema,
+  email: z.string().trim().email('Email inválido').optional().or(z.literal('')),
+  notas: z.string().trim().max(500).optional(),
+});
+
+export type ClienteFormData = z.infer<typeof clienteSchema>;
+
+// Appointment form schema
+export const agendamentoSchema = z.object({
+  cliente_id: z.string().uuid('Selecione um cliente'),
+  profissional_id: z.string().uuid('Selecione um profissional'),
+  servico_id: z.string().uuid('Selecione um serviço'),
+  data: z.date({ required_error: 'Data é obrigatória' }),
+  hora: z.string().min(1, 'Hora é obrigatória'),
+  status: z.string().default('pendente'),
+  notas: z.string().optional(),
+});
+
+export type AgendamentoFormData = z.infer<typeof agendamentoSchema>;

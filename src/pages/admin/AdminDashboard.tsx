@@ -1,14 +1,17 @@
-import { 
-  Calendar, 
-  Users, 
-  Clock, 
+import {
+  Calendar,
+  Users,
+  Clock,
   DollarSign,
-  Plus,
   Scissors,
   UserPlus,
   TrendingUp,
   TrendingDown,
-  ArrowRight
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  User
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,8 +20,17 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { mockDashboardMetrics, mockAgendamentos, mockClientes, mockProfissionais, mockServicos } from '@/lib/mock-data';
+import { useQuery } from '@tanstack/react-query';
+import {
+  getAgendamentos,
+  getClientes,
+  getProfissionais,
+  getServicos
+} from '@/lib/supabase-services';
+import { format, isSameDay, isThisMonth, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
+import { useMemo } from 'react';
 
 // Metric Card Component
 function MetricCard({
@@ -111,12 +123,14 @@ function QuickAction({
 // Today's Appointment Item
 function AppointmentItem({
   time,
+  date,
   clientName,
   serviceName,
   professionalName,
   status,
 }: {
   time: string;
+  date?: string;
   clientName: string;
   serviceName: string;
   professionalName: string;
@@ -140,8 +154,9 @@ function AppointmentItem({
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:shadow-card transition-shadow">
-      <div className="text-center min-w-[60px]">
+      <div className="text-center min-w-[70px]">
         <p className="text-lg font-bold text-primary">{time}</p>
+        {date && <p className="text-[10px] text-muted-foreground font-medium uppercase">{date}</p>}
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{clientName}</p>
@@ -158,7 +173,41 @@ function AppointmentItem({
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  
+  const empresaId = user?.empresa_id || '';
+
+  // Data Fetching
+  const { data: appointments = [], isLoading: loadingApps } = useQuery({
+    queryKey: ['agendamentos', empresaId],
+    queryFn: () => getAgendamentos(empresaId),
+    enabled: !!empresaId,
+  });
+
+  const { data: clients = [], isLoading: loadingClients } = useQuery({
+    queryKey: ['clientes', empresaId],
+    queryFn: () => getClientes(empresaId),
+    enabled: !!empresaId,
+  });
+
+  const { data: professionals = [], isLoading: loadingProfs } = useQuery({
+    queryKey: ['profissionais', empresaId],
+    queryFn: () => getProfissionais(empresaId),
+    enabled: !!empresaId,
+  });
+
+  const { data: services = [], isLoading: loadingServices } = useQuery({
+    queryKey: ['servicos', empresaId],
+    queryFn: () => getServicos(empresaId),
+    enabled: !!empresaId,
+  });
+
+  // Realtime Subscriptions
+  useSupabaseRealtime('agendamentos', empresaId, [['agendamentos', empresaId]]);
+  useSupabaseRealtime('clientes', empresaId, [['clientes', empresaId]]);
+  useSupabaseRealtime('profissionais', empresaId, [['profissionais', empresaId]]);
+  useSupabaseRealtime('servicos', empresaId, [['servicos', empresaId]]);
+
+  const isLoading = loadingApps || loadingClients || loadingProfs || loadingServices;
+
   // Format currency
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -167,8 +216,53 @@ export default function AdminDashboard() {
     }).format(value);
   };
 
-  // Get today's appointments (mocked)
-  const todayAppointments = mockAgendamentos.slice(0, 3);
+  // Metrics Calculation
+  const today = new Date();
+
+  const nextAppointments = useMemo(() =>
+    appointments
+      .filter(app => {
+        const startDate = parseISO(app.data_inicio);
+        // Upcoming from now, excluding canceled
+        return startDate >= today && app.status !== 'cancelado';
+      })
+      .sort((a, b) => parseISO(a.data_inicio).getTime() - parseISO(b.data_inicio).getTime()),
+    [appointments]
+  );
+
+  const pendingConfirmations = useMemo(() =>
+    appointments.filter(app => app.status === 'pendente').length,
+    [appointments]
+  );
+
+  const monthlyRevenue = useMemo(() =>
+    appointments
+      .filter(app => app.status === 'concluido' && isThisMonth(parseISO(app.data_inicio)))
+      .reduce((acc, app) => acc + (app.servico?.preco || 0), 0),
+    [appointments]
+  );
+
+  const statusCounts = useMemo(() => {
+    const counts = {
+      pendente: 0,
+      confirmado: 0,
+      em_andamento: 0,
+      concluido: 0,
+      cancelado: 0,
+      nao_compareceu: 0,
+    };
+    appointments.forEach(app => {
+      if (counts.hasOwnProperty(app.status)) {
+        counts[app.status as keyof typeof counts]++;
+      }
+    });
+    return counts;
+  }, [appointments]);
+
+  const todayCount = useMemo(() =>
+    appointments.filter(app => isSameDay(parseISO(app.data_inicio), today)).length,
+    [appointments]
+  );
 
   return (
     <AdminLayout>
@@ -187,28 +281,74 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Agendamentos Hoje"
-            value={mockDashboardMetrics.todayAppointments}
+            value={todayCount}
             icon={Calendar}
-            trend={mockDashboardMetrics.appointmentsGrowth}
-            trendLabel="vs semana passada"
+            loading={isLoading}
           />
           <MetricCard
             title="Confirmações Pendentes"
-            value={mockDashboardMetrics.pendingConfirmations}
+            value={pendingConfirmations}
             icon={Clock}
+            loading={isLoading}
           />
           <MetricCard
             title="Total de Clientes"
-            value={mockDashboardMetrics.totalClients}
+            value={clients.length}
             icon={Users}
+            loading={isLoading}
           />
           <MetricCard
             title="Receita Mensal"
-            value={formatCurrency(mockDashboardMetrics.monthlyRevenue)}
+            value={formatCurrency(monthlyRevenue)}
             icon={DollarSign}
-            trend={mockDashboardMetrics.revenueGrowth}
-            trendLabel="vs mês passado"
+            loading={isLoading}
           />
+        </div>
+
+        {/* Status Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-600 mb-2">
+              <AlertCircle className="h-4 w-4" />
+            </div>
+            <p className="text-2xl font-bold">{statusCounts.pendente}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Pendentes</p>
+          </div>
+          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 mb-2">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+            <p className="text-2xl font-bold">{statusCounts.confirmado}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Confirmados</p>
+          </div>
+          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-600 mb-2">
+              <Clock className="h-4 w-4" />
+            </div>
+            <p className="text-2xl font-bold">{statusCounts.em_andamento}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Em Curso</p>
+          </div>
+          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-600 mb-2">
+              <CheckCircle2 className="h-4 w-4" />
+            </div>
+            <p className="text-2xl font-bold">{statusCounts.concluido}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Concluídos</p>
+          </div>
+          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-red-500/10 flex items-center justify-center text-red-600 mb-2">
+              <XCircle className="h-4 w-4" />
+            </div>
+            <p className="text-2xl font-bold">{statusCounts.cancelado}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Cancelados</p>
+          </div>
+          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-gray-500/10 flex items-center justify-center text-gray-600 mb-2">
+              <User className="h-4 w-4" />
+            </div>
+            <p className="text-2xl font-bold">{statusCounts.nao_compareceu}</p>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Faltas</p>
+          </div>
         </div>
 
         {/* Quick Actions */}
@@ -219,19 +359,19 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="flex flex-wrap gap-3">
               <QuickAction
-                icon={Plus}
+                icon={Calendar}
                 label="Novo Agendamento"
-                href="/admin/appointments/new"
+                href="/admin/appointments?action=new"
               />
               <QuickAction
                 icon={Scissors}
                 label="Adicionar Serviço"
-                href="/admin/services/new"
+                href="/admin/services?action=new"
               />
               <QuickAction
                 icon={UserPlus}
                 label="Adicionar Profissional"
-                href="/admin/professionals/new"
+                href="/admin/professionals?action=new"
               />
             </div>
           </CardContent>
@@ -242,7 +382,7 @@ export default function AdminDashboard() {
           {/* Today's Schedule */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Agenda de Hoje</CardTitle>
+              <CardTitle className="text-lg">Próximos Agendamentos</CardTitle>
               <Link to="/admin/appointments">
                 <Button variant="ghost" size="sm" className="gap-1">
                   Ver todos <ArrowRight className="h-4 w-4" />
@@ -250,33 +390,25 @@ export default function AdminDashboard() {
               </Link>
             </CardHeader>
             <CardContent className="space-y-3">
-              {todayAppointments.length === 0 ? (
+              {isLoading ? (
+                [1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)
+              ) : nextAppointments.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                  <p className="text-muted-foreground">Nenhum agendamento para hoje</p>
-                  <Button variant="outline" size="sm" className="mt-3" asChild>
-                    <Link to="/admin/appointments/new">Criar agendamento</Link>
-                  </Button>
+                  <p className="text-muted-foreground">Nenhum agendamento futuro</p>
                 </div>
               ) : (
-                todayAppointments.map((apt) => {
-                  const cliente = mockClientes.find((c) => c.id === apt.cliente_id);
-                  const servico = mockServicos.find((s) => s.id === apt.servico_id);
-                  const profissional = mockProfissionais.find((p) => p.id === apt.profissional_id);
-                  return (
-                    <AppointmentItem
-                      key={apt.id}
-                      time={new Date(apt.data_inicio).toLocaleTimeString('pt-BR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                      clientName={cliente?.nome || 'Cliente'}
-                      serviceName={servico?.nome || 'Serviço'}
-                      professionalName={profissional?.nome || 'Profissional'}
-                      status={apt.status}
-                    />
-                  );
-                })
+                nextAppointments.slice(0, 3).map((apt) => (
+                  <AppointmentItem
+                    key={apt.id}
+                    time={format(parseISO(apt.data_inicio), 'HH:mm')}
+                    date={isSameDay(parseISO(apt.data_inicio), today) ? 'Hoje' : format(parseISO(apt.data_inicio), 'dd/MM')}
+                    clientName={apt.cliente?.nome || 'Cliente'}
+                    serviceName={apt.servico?.nome || 'Serviço'}
+                    professionalName={apt.professional?.nome || 'Profissional'}
+                    status={apt.status}
+                  />
+                ))
               )}
             </CardContent>
           </Card>
@@ -298,7 +430,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <p className="text-2xl font-bold">
-                  {mockServicos.filter((s) => s.ativo).length}
+                  {services.filter((s) => s.ativo).length}
                 </p>
               </div>
 
@@ -313,7 +445,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <p className="text-2xl font-bold">
-                  {mockProfissionais.filter((p) => p.ativo).length}
+                  {professionals.filter((p) => p.ativo).length}
                 </p>
               </div>
 
@@ -328,7 +460,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <p className="text-2xl font-bold">
-                  {mockAgendamentos.filter((a) => a.status === 'pendente').length}
+                  {appointments.filter((a) => a.status === 'pendente').length}
                 </p>
               </div>
             </CardContent>

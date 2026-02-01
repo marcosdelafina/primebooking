@@ -56,6 +56,7 @@ export interface Profissional {
   empresa_id: string;
   nome: string;
   email: string;
+  telefone?: string;
   avatar_url?: string;
   google_calendar_id?: string;
   google_refresh_token?: string;
@@ -72,6 +73,7 @@ export interface Disponibilidade {
 export interface SlotHorario {
   inicio: string; // HH:mm format
   fim: string;
+  ativo: boolean;
 }
 
 export interface Agendamento {
@@ -89,12 +91,12 @@ export interface Agendamento {
   updated_at: string;
 }
 
-export type AgendamentoStatus = 
-  | 'pendente' 
-  | 'confirmado' 
-  | 'em_andamento' 
-  | 'concluido' 
-  | 'cancelado' 
+export type AgendamentoStatus =
+  | 'pendente'
+  | 'confirmado'
+  | 'em_andamento'
+  | 'concluido'
+  | 'cancelado'
   | 'nao_compareceu';
 
 export interface Conversa {
