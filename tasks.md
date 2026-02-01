@@ -1,6 +1,14 @@
 # Tasks: PrimeBooking - SaaS de Agendamento Multi-Empresa
 
 **Input**: [spec.md](file:///Users/marcosdelafina/Antigravity/primebooking/spec.md)
+#### [NEW] [add_geo_tables.sql](file:///Users/marcosdelafina/Antigravity/primebooking/supabase/migrations/20260201160000_add_geo_tables.sql)
+Criar tabelas `estados` e `municipios` com dados do IBGE para suporte a endereços.
+
+#### [NEW] [create_municipios_view.sql](file:///Users/marcosdelafina/Antigravity/primebooking/supabase/migrations/20260201170000_create_municipios_view.sql)
+Criar a view `vw_municipios_com_estado` para busca facilitada de cidades vinculadas aos estados.
+
+#### [NEW] [create_paises_table.sql](file:///Users/marcosdelafina/Antigravity/primebooking/supabase/migrations/20260201171000_create_paises_table.sql)
+Criar a tabela `paises` para suporte a códigos de país e formatação de celulares.
 **Prerequisites**: plan.md, spec.md
 
 ## Phase 1: Setup (Shared Infrastructure)
@@ -22,10 +30,16 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [x] T004 Setup Supabase schema (empresas, usuarios, clientes, servicos, profissionais, agendamentos, conversas)
+- [x] T004.1 Setup admin_users table for global administration
 - [x] T005 [P] Enable Row Level Security (RLS) on all tables with tenant isolation
 - [x] T006 [P] Implement Authentication flow with multi-tenant custom claims
 - [x] T007 Configure Edge Functions base for Twilio and Google integrations
 - [x] T008 [P] Setup error handling and standardized API response formats
+- [x] Criar migração para as tabelas `estados` e `municipios`
+- [x] Criar view `vw_municipios_com_estado` para busca de cidades
+- [x] Criar tabela `paises` para códigos de país
+- [x] Integrar view de cidades/estados no formulário de Configurações
+- [x] Criar camada de serviço para Supabase (`/src/lib/supabase-services.ts`)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -35,10 +49,10 @@
 
 **Goal**: Allow company owners to manage services and basic settings
 
-- [ ] T009 [P] [US1] Implement CRUD for `servicos` in the backend
-- [ ] T010 [P] [US1] Implement CRUD for `profissionais` in the backend
-- [ ] T011 [US1] Build Administration Dashboard for Service Management
-- [ ] T012 [US1] Build Professional Management module with availability settings
+- [x] T009 [P] [US1] Implement CRUD for `servicos` in the backend
+- [x] T010 [P] [US1] Implement CRUD for `profissionais` in the backend
+- [x] T011 [US1] Build Administration Dashboard for Service Management
+- [x] T012 [US1] Build Professional Management module with availability settings
 
 ---
 

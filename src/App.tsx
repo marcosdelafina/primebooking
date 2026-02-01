@@ -1,35 +1,125 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
-function App() {
-  const [count, setCount] = useState(0)
+// Auth Pages
+import WelcomePage from "@/pages/auth/WelcomePage";
+import LoginPage from "@/pages/auth/LoginPage";
+import SignUpPage from "@/pages/auth/SignUpPage";
+import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
+import VerifyOTPPage from "@/pages/auth/VerifyOTPPage";
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+// Admin Pages
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import ServicesPage from "@/pages/admin/ServicesPage";
+import ProfessionalsPage from "@/pages/admin/ProfessionalsPage";
+import EnterpriseSettingsPage from "@/pages/admin/EnterpriseSettingsPage";
+
+// Client Pages
+import ClientExplorePage from "@/pages/client/ClientExplorePage";
+import BusinessDetailPage from "@/pages/client/BusinessDetailPage";
+
+// Other
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
+
+// Protected Route wrapper
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse-soft text-primary">Carregando...</div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
 }
 
-export default App
+// Public Route wrapper (redirects if already authenticated)
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse-soft text-primary">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public Auth Routes */}
+      <Route path="/" element={<PublicRoute><WelcomePage /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+      <Route path="/verify-otp" element={<PublicRoute><VerifyOTPPage /></PublicRoute>} />
+
+      {/* Protected Admin Routes */}
+      <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/services" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
+      <Route path="/admin/services/new" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
+      <Route path="/admin/services/:id" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
+      <Route path="/admin/professionals" element={<ProtectedRoute><ProfessionalsPage /></ProtectedRoute>} />
+      <Route path="/admin/professionals/new" element={<ProtectedRoute><ProfessionalsPage /></ProtectedRoute>} />
+      <Route path="/admin/professionals/:id" element={<ProtectedRoute><ProfessionalsPage /></ProtectedRoute>} />
+
+      {/* Placeholder routes */}
+      <Route path="/admin/clients" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/appointments" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/appointments/new" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/settings" element={<ProtectedRoute><EnterpriseSettingsPage /></ProtectedRoute>} />
+
+      {/* Client Booking Routes (Public) */}
+      <Route path="/book" element={<ClientExplorePage />} />
+      <Route path="/book/:slug" element={<BusinessDetailPage />} />
+
+      {/* Catch-all */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
+
+export default App;
+

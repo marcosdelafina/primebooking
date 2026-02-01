@@ -1,9 +1,9 @@
--- Enable UUID extension
+-- Enable Extensions if needed (gen_random_uuid is built-in for PG 13+)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Table: empresas
 CREATE TABLE IF NOT EXISTS public.empresas (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL,
     plano TEXT NOT NULL DEFAULT 'basic',
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.usuarios (
 
 -- Table: clientes
 CREATE TABLE IF NOT EXISTS public.clientes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES public.empresas(id) ON DELETE CASCADE,
     nome TEXT NOT NULL,
     telefone TEXT NOT NULL, -- E.164 format
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.clientes (
 
 -- Table: servicos
 CREATE TABLE IF NOT EXISTS public.servicos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES public.empresas(id) ON DELETE CASCADE,
     nome TEXT NOT NULL,
     descricao TEXT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.servicos (
 
 -- Table: profissionais
 CREATE TABLE IF NOT EXISTS public.profissionais (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES public.empresas(id) ON DELETE CASCADE,
     nome TEXT NOT NULL,
     email TEXT,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS public.profissionais (
 
 -- Table: agendamentos
 CREATE TABLE IF NOT EXISTS public.agendamentos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES public.empresas(id) ON DELETE CASCADE,
     cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
     profissional_id UUID REFERENCES public.profissionais(id) ON DELETE SET NULL,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS public.agendamentos (
 
 -- Table: conversas
 CREATE TABLE IF NOT EXISTS public.conversas (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES public.empresas(id) ON DELETE CASCADE,
     telefone_cliente TEXT NOT NULL,
     estado_fluxo TEXT DEFAULT 'awaiting_service',
