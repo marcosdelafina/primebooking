@@ -1,15 +1,14 @@
 import { useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Star, 
-  MapPin, 
-  Clock, 
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Star,
+  MapPin,
+  Clock,
   Phone,
   Share2,
   Heart,
   Calendar,
-  X,
   Check,
   ChevronRight,
   ChevronLeft
@@ -17,18 +16,18 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { mockBusinesses, generateTimeSlots, getNext7Days } from '@/lib/booking-data';
+import { generateTimeSlots, getNext7Days } from '@/lib/booking-data';
 import type { Servico } from '@/types/entities';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { getEmpresaBySlug, getServicos } from '@/lib/supabase-services';
 
 // Format helpers
 const formatCurrency = (value: number) => {
@@ -45,13 +44,6 @@ const formatDuration = (minutes: number) => {
     return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
   }
   return `${mins}min`;
-};
-
-const formatDate = (date: Date) => {
-  return date.toLocaleDateString('pt-BR', {
-    weekday: 'short',
-    day: 'numeric',
-  });
 };
 
 const formatDateFull = (date: Date) => {
@@ -73,8 +65,21 @@ export default function BusinessDetailPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Find business
-  const business = mockBusinesses.find((b) => b.slug === slug);
+  // 1. Fetch Business by Slug
+  const { data: business, isLoading: isBizLoading } = useQuery({
+    queryKey: ['business', slug],
+    queryFn: () => slug ? getEmpresaBySlug(slug) : null,
+    enabled: !!slug
+  });
+
+  // 2. Fetch Services once we have business ID
+  const { data: services = [], isLoading: isSvcLoading } = useQuery({
+    queryKey: ['services', business?.id],
+    queryFn: () => getServicos(business.id),
+    enabled: !!business?.id
+  });
+
+  const isLoading = isBizLoading || isSvcLoading;
 
   // Booking state
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -89,21 +94,21 @@ export default function BusinessDetailPage() {
   // Time slots for selected date
   const timeSlots = useMemo(() => {
     if (!business) return [];
-    const startHour = parseInt(business.horario_abertura.split(':')[0]);
-    const endHour = parseInt(business.horario_fechamento.split(':')[0]);
+    const startHour = parseInt((business.horario_abertura || '09:00').split(':')[0]);
+    const endHour = parseInt((business.horario_fechamento || '18:00').split(':')[0]);
     return generateTimeSlots(selectedDate, startHour, endHour);
   }, [selectedDate, business]);
 
   // Grouped services by category
   const groupedServices = useMemo(() => {
-    if (!business) return {};
-    return business.servicos.reduce((acc, service) => {
+    if (!business || !services) return {};
+    return services.reduce((acc: Record<string, Servico[]>, service: Servico) => {
       const category = service.categoria || 'Outros';
       if (!acc[category]) acc[category] = [];
       acc[category].push(service);
       return acc;
-    }, {} as Record<string, Servico[]>);
-  }, [business]);
+    }, {});
+  }, [business, services]);
 
   // Categories
   const categories = Object.keys(groupedServices);
@@ -155,16 +160,35 @@ export default function BusinessDetailPage() {
     setSelectedTime(null);
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse-soft text-primary font-medium text-lg">Carregando estabelecimento...</div>
+      </div>
+    );
+  }
+
   if (!business) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center px-4">
           <h1 className="text-2xl font-bold mb-4">Estabelecimento não encontrado</h1>
-          <Button onClick={() => navigate('/book')}>Voltar</Button>
+          <p className="text-muted-foreground mb-6">Verifique se o link está correto ou tente novamente mais tarde.</p>
+          <Button onClick={() => navigate('/book')}>Explorar outros estabelecimentos</Button>
         </div>
       </div>
     );
   }
+
+  // Fallback for missing fields if real DB doesn't have them yet
+  const businessImage = business.imagem_url || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80';
+  const businessGallery = business.galeria?.length > 0 ? business.galeria : [businessImage];
+  const openingTime = business.horario_abertura || '09:00';
+  const closingTime = business.horario_fechamento || '18:00';
+  const openDays = business.dias_funcionamento || ['seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+  const rating = business.rating || 5.0;
+  const reviewsCount = business.avaliacoes || 0;
+  const bio = business.descricao || 'Seja bem-vindo ao nosso estabelecimento. Agende seu horário com os melhores profissionais.';
 
   return (
     <div className="min-h-screen bg-background">
@@ -196,12 +220,12 @@ export default function BusinessDetailPage() {
         <div className="grid grid-cols-4 gap-2 mb-6 rounded-xl overflow-hidden">
           <div className="col-span-4 md:col-span-2 md:row-span-2 aspect-[4/3] md:aspect-auto">
             <img
-              src={business.galeria[0]}
+              src={businessGallery[0]}
               alt={business.nome}
               className="w-full h-full object-cover"
             />
           </div>
-          {business.galeria.slice(1, 5).map((img, i) => (
+          {businessGallery.slice(1, 5).map((img: string, i: number) => (
             <div key={i} className="hidden md:block aspect-[4/3]">
               <img
                 src={img}
@@ -227,23 +251,23 @@ export default function BusinessDetailPage() {
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex items-center gap-1">
                   <Star className="h-5 w-5 fill-warning text-warning" />
-                  <span className="font-semibold">{business.rating}</span>
-                  <span className="text-muted-foreground">({business.avaliacoes} avaliações)</span>
+                  <span className="font-semibold">{rating}</span>
+                  <span className="text-muted-foreground">({reviewsCount} avaliações)</span>
                 </div>
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  <span>{business.endereco}, {business.cidade}</span>
+                  <span>{business.endereco || 'Endereço não informado'}{business.cidade ? `, ${business.cidade}` : ''}</span>
                 </div>
               </div>
             </div>
 
             {/* Description */}
-            <p className="text-muted-foreground">{business.descricao}</p>
+            <p className="text-muted-foreground">{bio}</p>
 
             {/* Services */}
             <div>
               <h2 className="text-xl font-semibold mb-4">Serviços</h2>
-              
+
               {/* Category Tabs */}
               <div className="flex gap-2 overflow-x-auto pb-3 mb-4">
                 {categories.map((category) => (
@@ -311,10 +335,10 @@ export default function BusinessDetailPage() {
                     Horário de funcionamento
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {business.horario_abertura} - {business.horario_fechamento}
+                    {openingTime} - {closingTime}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {business.dias_funcionamento.map(d => {
+                    {openDays.map((d: string) => {
                       const labels: Record<string, string> = {
                         seg: 'Seg', ter: 'Ter', qua: 'Qua', qui: 'Qui', sex: 'Sex', sab: 'Sáb', dom: 'Dom'
                       };
@@ -506,13 +530,13 @@ export default function BusinessDetailPage() {
                   {/* Business Info */}
                   <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
                     <img
-                      src={business.imagem_url}
+                      src={businessImage}
                       alt={business.nome}
                       className="h-16 w-16 rounded-lg object-cover"
                     />
                     <div>
                       <h3 className="font-semibold">{business.nome}</h3>
-                      <p className="text-sm text-muted-foreground">{business.endereco}</p>
+                      <p className="text-sm text-muted-foreground">{business.endereco || 'A definir'}</p>
                     </div>
                   </div>
 

@@ -104,6 +104,30 @@ export async function getEmpresa(empresaId: string): Promise<any> {
     return data;
 }
 
+export async function getEmpresaBySlug(slug: string): Promise<any> {
+    const { data, error } = await supabase
+        .from('empresas')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function getEmpresasPublicas(): Promise<any[]> {
+    const { data, error } = await supabase
+        .from('empresas')
+        .select(`
+            *,
+            servicos(preco)
+        `)
+        .order('nome');
+
+    if (error) throw error;
+    return data || [];
+}
+
 export async function updateEmpresa(empresaId: string, data: any): Promise<any> {
     const { data: updated, error } = await supabase
         .from('empresas')

@@ -100,6 +100,12 @@ import { validateCNPJ, validateCPF } from './document-utils';
 // Enterprise settings schema
 export const empresaSettingsSchema = z.object({
   nome: nameSchema,
+  slug: z
+    .string()
+    .trim()
+    .min(3, 'O link deve ter pelo menos 3 caracteres')
+    .max(50, 'O link deve ter no máximo 50 caracteres')
+    .regex(/^[a-z0-9-]+$/, 'Use apenas letras minúsculas, números e hifens'),
   documento: z
     .string()
     .trim()
@@ -127,6 +133,9 @@ export const empresaSettingsSchema = z.object({
     .length(2, 'Estado inválido (UF)')
     .toUpperCase(),
   whatsapp: z.string().trim().min(8, 'WhatsApp muito curto').optional(),
+  categoria: z.string().trim().max(50).optional(),
+  imagem_url: z.string().trim().url('URL da imagem inválida').optional().or(z.literal('')),
+  descricao: z.string().trim().max(500).optional(),
 });
 
 export type EmpresaSettingsFormData = z.infer<typeof empresaSettingsSchema>;
@@ -145,7 +154,7 @@ export type ClienteFormData = z.infer<typeof clienteSchema>;
 export const agendamentoSchema = z.object({
   cliente_id: z.string().uuid('Selecione um cliente'),
   profissional_id: z.string().uuid('Selecione um profissional'),
-  servico_id: z.string().uuid('Selecione um serviço'),
+  servicos_ids: z.array(z.string().uuid()).min(1, 'Selecione pelo menos um serviço'),
   data: z.date({ required_error: 'Data é obrigatória' }),
   hora: z.string().min(1, 'Hora é obrigatória'),
   status: z.string().default('pendente'),

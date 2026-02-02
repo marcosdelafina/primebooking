@@ -81,7 +81,8 @@ export interface Agendamento {
   empresa_id: string;
   cliente_id: string;
   profissional_id: string;
-  servico_id: string;
+  servico_id: string; // Maintain for backward compatibility
+  servicos_ids: string[];
   data_inicio: string;
   data_fim: string;
   google_event_id?: string;

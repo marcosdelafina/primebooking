@@ -89,7 +89,7 @@ export default function AppointmentsPage() {
 
     const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
 
     const form = useForm<AgendamentoFormData>({
@@ -97,7 +97,7 @@ export default function AppointmentsPage() {
         defaultValues: {
             cliente_id: '',
             profissional_id: '',
-            servico_id: '',
+            servicos_ids: [],
             data: new Date(),
             hora: '',
             status: 'pendente',
@@ -184,29 +184,34 @@ export default function AppointmentsPage() {
     // Filtered appointments
     const filteredAppointments = useMemo(() => {
         return appointments.filter((app: any) => {
-            const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
+            const matchesStatus = statusFilter.length === 0 || statusFilter.includes(app.status);
+
+            // Search in multiple services names resolved from the services list
+            const serviceNames = (app.servicos_ids || [])
+                .map((id: string) => services.find(s => s.id === id)?.nome || '')
+                .join(' ') + (app.servico?.nome || '');
+
             const matchesSearch =
                 app.cliente?.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 app.profissional?.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                app.servico?.nome.toLowerCase().includes(searchQuery.toLowerCase());
+                serviceNames.toLowerCase().includes(searchQuery.toLowerCase());
 
             return matchesStatus && matchesSearch;
         }).sort((a: any, b: any) => parseISO(a.data_inicio).getTime() - parseISO(b.data_inicio).getTime());
-    }, [appointments, statusFilter, searchQuery]);
+    }, [appointments, statusFilter, searchQuery, services]);
 
     // Available slots calculation
     const availableSlots = useMemo(() => {
         const selectedProfId = form.watch('profissional_id');
         const selectedDate = form.watch('data');
-        const selectedSvcId = form.watch('servico_id');
+        const selectedSvcIds = form.watch('servicos_ids');
 
-        if (!selectedProfId || !selectedDate || !selectedSvcId) return [];
+        if (!selectedProfId || !selectedDate || !selectedSvcIds?.length) return [];
 
         const professional = professionals.find(p => p.id === selectedProfId);
-        const service = services.find(s => s.id === selectedSvcId);
-        if (!professional || !service) return [];
+        const selectedServices = services.filter(s => selectedSvcIds.includes(s.id));
+        if (!professional || selectedServices.length === 0) return [];
 
-        // Get day of week
         const daysOrder = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
         const dayKey = daysOrder[selectedDate.getDay()];
         const availability = professional.disponibilidade?.[dayKey];
@@ -214,10 +219,13 @@ export default function AppointmentsPage() {
         if (!availability || availability.length === 0) return [];
 
         const slots: string[] = [];
-        const duration = service.duracao_min;
+        const totalDuration = selectedServices.reduce((sum, s) => sum + s.duracao_min, 0);
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const now = new Date();
+        const isToday = dateStr === format(now, 'yyyy-MM-dd');
 
         // Get existing appointments for this prof/day to avoid overlap
+        // We include all statuses except 'cancelado' as occupied time
         const existingOnDay = appointments.filter((a: any) =>
             a.profissional_id === selectedProfId &&
             format(new Date(a.data_inicio), 'yyyy-MM-dd') === dateStr &&
@@ -229,15 +237,22 @@ export default function AppointmentsPage() {
             let current = new Date(`${dateStr}T${period.inicio}`);
             const end = new Date(`${dateStr}T${period.fim}`);
 
-            while (addMinutes(current, duration) <= end) {
+            while (addMinutes(current, totalDuration) <= end) {
                 const hourStr = format(current, 'HH:mm');
                 const slotStart = new Date(current);
-                const slotEnd = addMinutes(current, duration);
+                const slotEnd = addMinutes(current, totalDuration);
 
-                // Simple collision check
+                // 1. Check if slot is in the past (if today)
+                if (isToday && slotStart < now) {
+                    current = addMinutes(current, 15);
+                    continue;
+                }
+
+                // 2. Collision check against existing appointments
                 const isBusy = existingOnDay.some((a: any) => {
                     const appStart = new Date(a.data_inicio);
                     const appEnd = new Date(a.data_fim);
+                    // Standard overlap: (start1 < end2) AND (end1 > start2)
                     return (slotStart < appEnd && slotEnd > appStart);
                 });
 
@@ -245,13 +260,13 @@ export default function AppointmentsPage() {
                     slots.push(hourStr);
                 }
 
-                // Advance 15 or 30 mins for slot availability
+                // Advance for next potential slot
                 current = addMinutes(current, 15);
             }
         });
 
         return slots;
-    }, [form.watch('profissional_id'), form.watch('data'), form.watch('servico_id'), professionals, services, appointments, selectedAppointment]);
+    }, [form.watch('profissional_id'), form.watch('data'), form.watch('servicos_ids'), professionals, services, appointments, selectedAppointment]);
 
     // Services filtered by professional
     const filteredServicesForPro = useMemo(() => {
@@ -265,18 +280,20 @@ export default function AppointmentsPage() {
     }, [form.watch('profissional_id'), professionals, services]);
 
     const onSubmit = (values: AgendamentoFormData) => {
-        const selectedService = services.find(s => s.id === values.servico_id);
-        if (!selectedService) return;
+        const selectedServices = services.filter(s => values.servicos_ids.includes(s.id));
+        if (selectedServices.length === 0) return;
 
+        const totalDuration = selectedServices.reduce((sum, s) => sum + s.duracao_min, 0);
         const [hours, minutes] = values.hora.split(':').map(Number);
         const dataInicio = new Date(values.data);
         dataInicio.setHours(hours, minutes, 0, 0);
-        const dataFim = addMinutes(dataInicio, selectedService.duracao_min);
+        const dataFim = addMinutes(dataInicio, totalDuration);
 
         const payload = {
             cliente_id: values.cliente_id,
             profissional_id: values.profissional_id,
-            servico_id: values.servico_id,
+            servicos_ids: values.servicos_ids,
+            servico_id: values.servicos_ids[0], // Keep for compatibility
             data_inicio: dataInicio.toISOString(),
             data_fim: dataFim.toISOString(),
             status: values.status,
@@ -295,7 +312,7 @@ export default function AppointmentsPage() {
         form.reset({
             cliente_id: app.cliente_id,
             profissional_id: app.profissional_id,
-            servico_id: app.servico_id,
+            servicos_ids: app.servicos_ids || (app.servico_id ? [app.servico_id] : []),
             data: new Date(app.data_inicio),
             hora: format(new Date(app.data_inicio), 'HH:mm'),
             status: app.status,
@@ -332,18 +349,55 @@ export default function AppointmentsPage() {
                         />
                     </div>
                     <div className="flex gap-2">
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="w-[180px]">
-                                <Filter className="h-4 w-4 mr-2" />
-                                <SelectValue placeholder="Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos os Status</SelectItem>
-                                {Object.entries(statusConfig).map(([key, config]) => (
-                                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="w-[180px] justify-between h-10 border-input bg-background px-3 py-2 text-sm">
+                                    <div className="flex items-center gap-2 truncate">
+                                        <Filter className="h-4 w-4 text-muted-foreground" />
+                                        <span>
+                                            {statusFilter.length === 0
+                                                ? "Todos os Status"
+                                                : `${statusFilter.length} Selecionado${statusFilter.length > 1 ? 's' : ''}`}
+                                        </span>
+                                    </div>
+                                    <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[200px] p-0" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Filtrar status..." />
+                                    <CommandList>
+                                        <CommandEmpty>Nenhum status encontrado.</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem
+                                                onSelect={() => setStatusFilter([])}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Checkbox checked={statusFilter.length === 0} className="pointer-events-none" />
+                                                <span>Todos os Status</span>
+                                            </CommandItem>
+                                            {Object.entries(statusConfig).map(([key, config]) => (
+                                                <CommandItem
+                                                    key={key}
+                                                    onSelect={() => {
+                                                        setStatusFilter(prev =>
+                                                            prev.includes(key)
+                                                                ? prev.filter(s => s !== key)
+                                                                : [...prev, key]
+                                                        );
+                                                    }}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <Checkbox checked={statusFilter.includes(key)} className="pointer-events-none" />
+                                                    <config.icon className="h-4 w-4 text-muted-foreground" />
+                                                    <span>{config.label}</span>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
 
@@ -365,7 +419,7 @@ export default function AppointmentsPage() {
                                 </Button>
                             )}
                             {searchQuery && (
-                                <Button variant="outline" onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}>
+                                <Button variant="outline" onClick={() => { setSearchQuery(''); setStatusFilter([]); }}>
                                     Limpar filtros
                                 </Button>
                             )}
@@ -388,14 +442,28 @@ export default function AppointmentsPage() {
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <h3 className="font-semibold text-lg">{app.cliente?.nome}</h3>
-                                                <Badge variant="outline" className={cn("text-[10px] uppercase font-bold px-1.5 py-0", config.color)}>
-                                                    {config.label}
-                                                </Badge>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Badge variant="outline" className={cn("text-[10px] uppercase font-bold px-1.5 py-0", config.color)}>
+                                                        {config.label}
+                                                    </Badge>
+                                                    {app.google_event_id && (
+                                                        <div className="flex items-center" title="Sincronizado com Google Calendar">
+                                                            <img
+                                                                src="https://www.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png"
+                                                                alt="Google"
+                                                                className="w-3.5 h-3.5 opacity-80"
+                                                                onDragStart={(e) => e.preventDefault()}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
                                                 <div className="flex items-center gap-1">
                                                     <Scissors className="h-3.5 w-3.5" />
-                                                    {app.servico?.nome}
+                                                    {app.servicos_ids && app.servicos_ids.length > 0
+                                                        ? services.filter(s => app.servicos_ids.includes(s.id)).map(s => s.nome).join(', ')
+                                                        : app.servico?.nome}
                                                 </div>
                                                 <div className="flex items-center gap-1">
                                                     <User className="h-3.5 w-3.5" />
@@ -565,10 +633,10 @@ export default function AppointmentsPage() {
                                     />
                                     <FormField
                                         control={form.control}
-                                        name="servico_id"
+                                        name="servicos_ids"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
-                                                <FormLabel>Serviço</FormLabel>
+                                                <FormLabel>Serviços</FormLabel>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
@@ -576,18 +644,24 @@ export default function AppointmentsPage() {
                                                                 variant="outline"
                                                                 role="combobox"
                                                                 className={cn(
-                                                                    "w-full justify-between font-normal",
-                                                                    !field.value && "text-muted-foreground"
+                                                                    "w-full justify-between font-normal h-auto py-2",
+                                                                    !field.value?.length && "text-muted-foreground"
                                                                 )}
                                                             >
-                                                                {field.value
-                                                                    ? services.find((s) => s.id === field.value)?.nome
-                                                                    : "Serviço"}
+                                                                <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                                                    {field.value?.length > 0
+                                                                        ? services.filter((s) => field.value.includes(s.id)).map(s => (
+                                                                            <Badge key={s.id} variant="secondary" className="text-[10px] px-1 h-5">
+                                                                                {s.nome}
+                                                                            </Badge>
+                                                                        ))
+                                                                        : "Selecione os serviços"}
+                                                                </div>
                                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                             </Button>
                                                         </FormControl>
                                                     </PopoverTrigger>
-                                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                                                         <Command>
                                                             <CommandInput placeholder="Buscar serviço..." />
                                                             <CommandList>
@@ -603,14 +677,17 @@ export default function AppointmentsPage() {
                                                                         filteredServicesForPro.map((svc) => (
                                                                             <CommandItem
                                                                                 key={svc.id}
-                                                                                value={svc.nome}
                                                                                 onSelect={() => {
-                                                                                    form.setValue("servico_id", svc.id);
+                                                                                    const current = field.value || [];
+                                                                                    const next = current.includes(svc.id)
+                                                                                        ? current.filter(id => id !== svc.id)
+                                                                                        : [...current, svc.id];
+                                                                                    form.setValue("servicos_ids", next, { shouldValidate: true });
                                                                                 }}
                                                                                 className="flex items-center gap-2"
                                                                             >
                                                                                 <Checkbox
-                                                                                    checked={field.value === svc.id}
+                                                                                    checked={field.value?.includes(svc.id)}
                                                                                     className="pointer-events-none"
                                                                                 />
                                                                                 <span>{svc.nome} - R$ {svc.preco}</span>

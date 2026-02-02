@@ -16,8 +16,11 @@ import {
   X,
   Calendar,
   Scissors,
-  Clock
+  Clock,
+  CalendarCheck2,
+  ChevronsUpDown,
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -42,13 +45,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Form,
   FormControl,
   FormField,
@@ -56,6 +52,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -90,13 +88,17 @@ function ProfessionalCard({
   onEdit,
   onDelete,
   onToggleActive,
+  onConnectGoogle,
 }: {
   professional: Profissional;
   services: Servico[];
   onEdit: () => void;
   onDelete: () => void;
   onToggleActive: (active: boolean) => void;
+  onConnectGoogle: () => void;
 }) {
+  const isGoogleConnected = !!professional.google_refresh_token;
+
   const assignedServices = services.filter((s) =>
     professional.servicos_ids.includes(s.id)
   );
@@ -143,14 +145,17 @@ function ProfessionalCard({
                 <Badge
                   variant={professional.ativo ? 'default' : 'secondary'}
                   className={cn(
-                    'text-[10px] uppercase font-bold tracking-tight px-1.5 py-0',
-                    professional.ativo
-                      ? 'bg-green-500/10 text-green-600 border-green-200'
-                      : 'bg-muted text-muted-foreground'
+                    professional.ativo ? 'bg-green-500 hover:bg-green-600' : 'bg-slate-200 text-slate-600'
                   )}
                 >
                   {professional.ativo ? 'Ativo' : 'Inativo'}
                 </Badge>
+                {isGoogleConnected && (
+                  <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-600 gap-1">
+                    <CalendarCheck2 className="h-3 w-3" />
+                    Google Calendar
+                  </Badge>
+                )}
               </div>
 
               <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 mt-2">
@@ -210,6 +215,10 @@ function ProfessionalCard({
                   <Pencil className="h-4 w-4 mr-2" />
                   Editar
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={onConnectGoogle} className="cursor-pointer">
+                  <CalendarCheck2 className="h-4 w-4 mr-2" />
+                  {isGoogleConnected ? 'Reconectar Google' : 'Conectar Google'}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={onDelete}
                   className="text-destructive focus:text-destructive cursor-pointer"
@@ -232,7 +241,7 @@ export default function ProfessionalsPage() {
   const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Profissional | null>(null);
@@ -301,6 +310,42 @@ export default function ProfessionalsPage() {
     }
   }, [searchParams, setSearchParams, form]);
 
+  useEffect(() => {
+    if (searchParams.get('sync') === 'success') {
+      toast({
+        title: 'Sucesso!',
+        description: 'Google Calendar conectado com sucesso.',
+      });
+      // Clear the param
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('sync');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, toast]);
+
+  const handleConnectGoogle = async (profissionalId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('google-calendar-auth', {
+        body: {
+          profissional_id: profissionalId,
+          empresa_id: empresaId,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
+      console.error('Error connecting Google:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível iniciar a conexão com o Google.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Mutations
   const createMutation = useMutation({
     mutationFn: (data: Partial<Profissional>) => createProfissional(empresaId, data),
@@ -352,9 +397,9 @@ export default function ProfessionalsPage() {
         prof.email.toLowerCase().includes(search) ||
         (prof.telefone && prof.telefone.includes(searchQuery));
 
-      const matchesStatus = statusFilter === 'all' ||
-        (statusFilter === 'active' && prof.ativo) ||
-        (statusFilter === 'inactive' && !prof.ativo);
+      const matchesStatus = statusFilter.length === 0 ||
+        (statusFilter.includes('active') && prof.ativo) ||
+        (statusFilter.includes('inactive') && !prof.ativo);
 
       return matchesSearch && matchesStatus;
     });
@@ -468,20 +513,58 @@ export default function ProfessionalsPage() {
               </button>
             )}
           </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(value: any) => setStatusFilter(value)}
-          >
-            <SelectTrigger className="w-full md:w-48 bg-card">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Status</SelectItem>
-              <SelectItem value="active">Apenas Ativos</SelectItem>
-              <SelectItem value="inactive">Apenas Inativos</SelectItem>
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full md:w-48 bg-card justify-between h-10 border-input px-3 py-2 text-sm">
+                <div className="flex items-center gap-2 truncate">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <span>
+                    {statusFilter.length === 0
+                      ? "Todos os Status"
+                      : statusFilter.length === 1
+                        ? (statusFilter[0] === 'active' ? 'Ativos' : 'Inativos')
+                        : "Vários Selecionados"}
+                  </span>
+                </div>
+                <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Filtrar status..." />
+                <CommandList>
+                  <CommandEmpty>Não encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={() => setStatusFilter([])}
+                      className="flex items-center gap-2"
+                    >
+                      <Checkbox checked={statusFilter.length === 0} className="pointer-events-none" />
+                      <span>Todos os Status</span>
+                    </CommandItem>
+                    <CommandItem
+                      onSelect={() => {
+                        setStatusFilter(prev => prev.includes('active') ? prev.filter(s => s !== 'active') : [...prev, 'active']);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Checkbox checked={statusFilter.includes('active')} className="pointer-events-none" />
+                      <span>Ativos</span>
+                    </CommandItem>
+                    <CommandItem
+                      onSelect={() => {
+                        setStatusFilter(prev => prev.includes('inactive') ? prev.filter(s => s !== 'inactive') : [...prev, 'inactive']);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Checkbox checked={statusFilter.includes('inactive')} className="pointer-events-none" />
+                      <span>Inativos</span>
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* List */}
@@ -509,6 +592,7 @@ export default function ProfessionalsPage() {
                 onEdit={() => openEditForm(prof)}
                 onDelete={() => openDeleteDialog(prof)}
                 onToggleActive={(active) => handleToggleActive(prof, active)}
+                onConnectGoogle={() => handleConnectGoogle(prof.id)}
               />
             ))}
           </div>

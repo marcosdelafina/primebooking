@@ -19,6 +19,7 @@ import ProfessionalsPage from "@/pages/admin/ProfessionalsPage";
 import EnterpriseSettingsPage from "@/pages/admin/EnterpriseSettingsPage";
 import ClientsPage from "@/pages/admin/ClientsPage";
 import AppointmentsPage from "@/pages/admin/AppointmentsPage";
+import GoogleCallback from "@/pages/admin/GoogleCallback";
 
 // Client Pages
 import ClientExplorePage from "@/pages/client/ClientExplorePage";
@@ -98,6 +99,7 @@ function AppRoutes() {
       <Route path="/admin/appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
       <Route path="/admin/appointments/new" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute><EnterpriseSettingsPage /></ProtectedRoute>} />
+      <Route path="/admin/google-callback" element={<GoogleCallback />} />
 
       {/* Client Booking Routes (Public) */}
       <Route path="/book" element={<ClientExplorePage />} />

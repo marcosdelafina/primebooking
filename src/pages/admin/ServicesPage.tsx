@@ -10,7 +10,8 @@ import {
   Pencil,
   Trash2,
   Filter,
-  X
+  X,
+  ChevronsUpDown,
 } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -32,13 +33,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Form,
@@ -199,7 +196,7 @@ export default function ServicesPage() {
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Servico | null>(null);
@@ -286,9 +283,9 @@ export default function ServicesPage() {
       const matchesSearch = service.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
         service.descricao?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesStatus = statusFilter === 'all' ||
-        (statusFilter === 'active' && service.ativo) ||
-        (statusFilter === 'inactive' && !service.ativo);
+      const matchesStatus = statusFilter.length === 0 ||
+        (statusFilter.includes('active') && service.ativo) ||
+        (statusFilter.includes('inactive') && !service.ativo);
 
       return matchesSearch && matchesStatus;
     });
@@ -399,20 +396,58 @@ export default function ServicesPage() {
                 </button>
               )}
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value: 'all' | 'active' | 'inactive') => setStatusFilter(value)}
-            >
-              <SelectTrigger className="w-full sm:w-40">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="active">Ativos</SelectItem>
-                <SelectItem value="inactive">Inativos</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-40 justify-between h-10 border-input bg-background px-3 py-2 text-sm">
+                  <div className="flex items-center gap-2 truncate">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <span>
+                      {statusFilter.length === 0
+                        ? "Todos"
+                        : statusFilter.length === 1
+                          ? (statusFilter[0] === 'active' ? 'Ativos' : 'Inativos')
+                          : "Vários"}
+                    </span>
+                  </div>
+                  <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Filtrar status..." />
+                  <CommandList>
+                    <CommandEmpty>Não encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        onSelect={() => setStatusFilter([])}
+                        className="flex items-center gap-2"
+                      >
+                        <Checkbox checked={statusFilter.length === 0} className="pointer-events-none" />
+                        <span>Todos</span>
+                      </CommandItem>
+                      <CommandItem
+                        onSelect={() => {
+                          setStatusFilter(prev => prev.includes('active') ? prev.filter(s => s !== 'active') : [...prev, 'active']);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Checkbox checked={statusFilter.includes('active')} className="pointer-events-none" />
+                        <span>Ativos</span>
+                      </CommandItem>
+                      <CommandItem
+                        onSelect={() => {
+                          setStatusFilter(prev => prev.includes('inactive') ? prev.filter(s => s !== 'inactive') : [...prev, 'inactive']);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Checkbox checked={statusFilter.includes('inactive')} className="pointer-events-none" />
+                        <span>Inativos</span>
+                      </CommandItem>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         )}
 
@@ -422,7 +457,7 @@ export default function ServicesPage() {
         ) : filteredServices.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum serviço encontrado.</p>
-            <Button variant="link" onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}>
+            <Button variant="link" onClick={() => { setSearchQuery(''); setStatusFilter([]); }}>
               Limpar filtros
             </Button>
           </div>

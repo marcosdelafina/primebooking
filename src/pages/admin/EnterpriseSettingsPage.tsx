@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, MapPin, Save, Loader2 } from 'lucide-react';
+import { Building2, MapPin, Save, Loader2, ExternalLink, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getEmpresa, updateEmpresa, getEstados, getMunicipios } from '@/lib/supabase-services';
 import { empresaSettingsSchema, type EmpresaSettingsFormData } from '@/lib/validations';
@@ -40,6 +40,7 @@ export default function EnterpriseSettingsPage() {
         resolver: zodResolver(empresaSettingsSchema),
         defaultValues: {
             nome: '',
+            slug: '',
             documento: '',
             cep: '',
             logradouro: '',
@@ -49,6 +50,9 @@ export default function EnterpriseSettingsPage() {
             cidade: '',
             estado: '',
             whatsapp: '',
+            categoria: '',
+            imagem_url: '',
+            descricao: '',
         },
     });
 
@@ -65,6 +69,7 @@ export default function EnterpriseSettingsPage() {
         if (empresa) {
             form.reset({
                 nome: empresa.nome || '',
+                slug: empresa.slug || '',
                 documento: empresa.documento || '',
                 cep: empresa.cep || '',
                 logradouro: empresa.logradouro || '',
@@ -74,6 +79,9 @@ export default function EnterpriseSettingsPage() {
                 cidade: empresa.cidade || '',
                 estado: empresa.estado || '',
                 whatsapp: empresa.whatsapp || '',
+                categoria: empresa.categoria || '',
+                imagem_url: empresa.imagem_url || '',
+                descricao: empresa.descricao || '',
             });
         }
     }, [empresa, form]);
@@ -152,6 +160,83 @@ export default function EnterpriseSettingsPage() {
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-2">
+                                <Globe className="h-5 w-5 text-primary" />
+                                <CardTitle>Perfil Público</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Como seu estabelecimento aparecerá para os clientes no PrimeBooking.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="categoria">Categoria Principal</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between font-normal"
+                                            >
+                                                {form.watch('categoria') || "Selecione uma categoria"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[300px] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Buscar categoria..." />
+                                                <CommandList>
+                                                    <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {['Salão de Beleza', 'Barbearia', 'Spa & Bem-estar', 'Estética', 'Saúde', 'Academia', 'Educação', 'Outros'].map((cat) => (
+                                                            <CommandItem
+                                                                key={cat}
+                                                                value={cat}
+                                                                onSelect={() => form.setValue('categoria', cat)}
+                                                            >
+                                                                <Checkbox
+                                                                    checked={form.watch('categoria') === cat}
+                                                                    className="mr-2"
+                                                                />
+                                                                {cat}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="imagem_url">URL da Foto de Perfil</Label>
+                                    <Input
+                                        id="imagem_url"
+                                        placeholder="https://exemplo.com/sua-foto.jpg"
+                                        {...form.register('imagem_url')}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">Cole uma URL de imagem do Unsplash ou do seu site.</p>
+                                    {form.formState.errors.imagem_url && (
+                                        <p className="text-sm text-destructive">{form.formState.errors.imagem_url.message}</p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="descricao">Descrição / Bio (Aparece no seu perfil)</Label>
+                                <Input
+                                    id="descricao"
+                                    placeholder="Conte um pouco sobre seu estabelecimento, especialidades e diferenciais."
+                                    {...form.register('descricao')}
+                                />
+                                {form.formState.errors.descricao && (
+                                    <p className="text-sm text-destructive">{form.formState.errors.descricao.message}</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
                                 <Building2 className="h-5 w-5 text-primary" />
                                 <CardTitle>Dados Gerais</CardTitle>
                             </div>
@@ -170,6 +255,48 @@ export default function EnterpriseSettingsPage() {
                                     />
                                     {form.formState.errors.nome && (
                                         <p className="text-sm text-destructive">{form.formState.errors.nome.message}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="slug" className="flex items-center gap-2">
+                                        <Globe className="h-4 w-4 text-muted-foreground" />
+                                        Link de Agendamento (Slug)
+                                    </Label>
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">/book/</span>
+                                            <Input
+                                                id="slug"
+                                                className="pl-14"
+                                                placeholder="nome-do-seu-salao"
+                                                {...form.register('slug')}
+                                                onChange={(e) => {
+                                                    const value = e.target.value
+                                                        .toLowerCase()
+                                                        .replace(/\s+/g, '-')
+                                                        .replace(/[^a-z0-9-]/g, '');
+                                                    form.setValue('slug', value, { shouldValidate: true });
+                                                }}
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            title="Ver página pública"
+                                            onClick={() => {
+                                                const slug = form.getValues('slug');
+                                                if (slug) window.open(`/book/${slug}`, '_blank');
+                                            }}
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Seu link público será: <span className="font-medium text-primary">localhost:8080/book/{form.watch('slug')}</span>
+                                    </p>
+                                    {form.formState.errors.slug && (
+                                        <p className="text-sm text-destructive">{form.formState.errors.slug.message}</p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
