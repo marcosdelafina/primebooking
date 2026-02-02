@@ -9,6 +9,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   signUp: (data: SignUpData) => Promise<{ success: boolean; error?: string }>;
+  impersonateCompany: (companyId: string) => void;
+  resetImpersonation: () => void;
 }
 
 interface SignUpData {
@@ -22,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [originalUser, setOriginalUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (userId: string, email: string) => {
@@ -36,13 +39,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      setUser({
+      const authUser: AuthUser = {
         id: data.id,
         email: email,
         nome: data.nome,
         empresa_id: data.empresa_id,
         role: data.role,
-      });
+        is_admin_global: data.is_admin_global,
+      };
+
+      setUser(authUser);
+      setOriginalUser(authUser);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setUser(null);
@@ -128,6 +135,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const impersonateCompany = useCallback((companyId: string) => {
+    if (originalUser?.is_admin_global) {
+      setUser(prev => prev ? { ...prev, empresa_id: companyId } : null);
+    }
+  }, [originalUser]);
+
+  const resetImpersonation = useCallback(() => {
+    setUser(originalUser);
+  }, [originalUser]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -137,6 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         signUp,
+        impersonateCompany,
+        resetImpersonation,
       }}
     >
       {children}

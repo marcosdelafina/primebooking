@@ -1,15 +1,17 @@
 import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+import { animatedToast } from "@/components/ui/animated-toast";
 
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
 
-type ToasterToast = ToastProps & {
+type ToasterToast = Omit<ToastProps, "variant"> & {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: ToastActionElement;
+  variant?: "default" | "destructive" | "success" | "warning";
 };
 
 const actionTypes = {
@@ -30,21 +32,21 @@ type ActionType = typeof actionTypes;
 
 type Action =
   | {
-      type: ActionType["ADD_TOAST"];
-      toast: ToasterToast;
-    }
+    type: ActionType["ADD_TOAST"];
+    toast: ToasterToast;
+  }
   | {
-      type: ActionType["UPDATE_TOAST"];
-      toast: Partial<ToasterToast>;
-    }
+    type: ActionType["UPDATE_TOAST"];
+    toast: Partial<ToasterToast>;
+  }
   | {
-      type: ActionType["DISMISS_TOAST"];
-      toastId?: ToasterToast["id"];
-    }
+    type: ActionType["DISMISS_TOAST"];
+    toastId?: ToasterToast["id"];
+  }
   | {
-      type: ActionType["REMOVE_TOAST"];
-      toastId?: ToasterToast["id"];
-    };
+    type: ActionType["REMOVE_TOAST"];
+    toastId?: ToasterToast["id"];
+  };
 
 interface State {
   toasts: ToasterToast[];
@@ -100,9 +102,9 @@ export const reducer = (state: State, action: Action): State => {
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
             ? {
-                ...t,
-                open: false,
-              }
+              ...t,
+              open: false,
+            }
             : t,
         ),
       };
@@ -136,6 +138,26 @@ type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
   const id = genId();
+
+  // Bridge to AnimatedToast
+  const typeMap: Record<string, "success" | "error" | "warning" | "info"> = {
+    default: "info",
+    destructive: "error",
+    success: "success",
+    warning: "warning",
+  };
+
+  const type = typeMap[props.variant || "default"] || "info";
+
+  if (type === "success") {
+    animatedToast.success(props.title?.toString() || "", props.description?.toString());
+  } else if (type === "error") {
+    animatedToast.error(props.title?.toString() || "", props.description?.toString());
+  } else if (type === "warning") {
+    animatedToast.warning(props.title?.toString() || "", props.description?.toString());
+  } else {
+    animatedToast.info(props.title?.toString() || "", props.description?.toString());
+  }
 
   const update = (props: ToasterToast) =>
     dispatch({

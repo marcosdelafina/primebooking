@@ -1,13 +1,36 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Star, Calendar, X } from 'lucide-react';
+import { Search, MapPin, Star, X, Share2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { getEmpresasPublicas } from '@/lib/supabase-services';
+import { LikeButton } from '@/components/LikeButton';
+
+// Helper to safely parse categories (handles legacy strings and double-encoded JSON)
+const parseCategories = (raw: any): string[] => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    if (raw.length === 1 && typeof raw[0] === 'string' && raw[0].startsWith('[')) {
+      try {
+        const parsed = JSON.parse(raw[0]);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) { /* ignore */ }
+    }
+    return raw;
+  }
+  if (typeof raw === 'string' && raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) { /* ignore */ }
+  }
+  return [raw];
+};
 
 // Header Component
 function ClientHeader() {
@@ -15,13 +38,21 @@ function ClientHeader() {
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
       <div className="container max-w-6xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
-          <Link to="/book" className="flex items-center gap-2 shrink-0">
-            <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-primary-foreground" />
+          <Link to="/book" className="flex items-center gap-3 shrink-0">
+            <div className="h-11 w-11 rounded-xl overflow-hidden flex items-center justify-center shadow-soft">
+              <img src="/favicon.png" alt="PrimeBooking Logo" className="h-full w-full object-cover" />
             </div>
-            <span className="text-lg font-bold hidden sm:block">PrimeBooking</span>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-lg font-bold leading-tight">PrimeBooking</span>
+              <span className="text-[10px] font-medium text-muted-foreground leading-none">Agendamento Inteligente</span>
+            </div>
           </Link>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2">
+            <div className="mr-2 hidden md:block">
+              <LikeButton />
+            </div>
+            <ThemeToggle />
             <Link to="/login">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
@@ -37,17 +68,6 @@ function ClientHeader() {
 
 // Business Card Component
 function BusinessCard({ business }: { business: any }) {
-  const formatPrice = (servicos: any[]) => {
-    if (!servicos || servicos.length === 0) return 'Sob consulta';
-    const prices = servicos.map(s => s.preco).filter(p => p != null && p > 0);
-    if (prices.length === 0) return 'Sob consulta';
-
-    const minPrice = Math.min(...prices);
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(minPrice);
-  };
 
   const businessImage = business.imagem_url || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80';
 
@@ -60,33 +80,67 @@ function BusinessCard({ business }: { business: any }) {
             alt={business.nome}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          <Badge className="absolute top-3 right-3 bg-background/90 text-foreground hover:bg-background/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
-            {business.categoria || 'Serviços'}
-          </Badge>
+          <div className="absolute top-3 right-3 flex flex-wrap gap-1 justify-end">
+            {parseCategories(business.categoria).map((cat: string) => (
+              <Badge key={cat} className="bg-background/90 text-foreground hover:bg-background/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
+                {cat}
+              </Badge>
+            ))}
+            {parseCategories(business.categoria).length === 0 && (
+              <Badge className="bg-background/90 text-foreground hover:bg-background/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
+                Serviços
+              </Badge>
+            )}
+          </div>
         </div>
-        <CardContent className="p-4 flex flex-col h-[calc(100%-160px)]">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+        <CardContent className="p-4 flex flex-col h-[calc(100%-160px)] min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1 min-w-0">
+            <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors flex-1 min-w-0">
               {business.nome}
             </h3>
             <div className="flex items-center gap-1 shrink-0">
-              <Star className="h-4 w-4 fill-warning text-warning" />
-              <span className="font-medium">{business.rating || '5.0'}</span>
-              <span className="text-muted-foreground text-sm">({business.avaliacoes || '0'})</span>
+              <div className="flex items-center gap-1 mr-1">
+                <Star className="h-4 w-4 fill-warning text-warning" />
+                <span className="font-medium text-sm">{business.rating || '5.0'}</span>
+                <span className="text-muted-foreground text-xs">({business.avaliacoes || '0'})</span>
+              </div>
+              <div className="h-3 w-px bg-border mx-1" />
+              <LikeButton targetId={business.id} compact />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const shareUrl = `${window.location.origin}/book/${business.slug}`;
+                  if (navigator.share) {
+                    navigator.share({
+                      title: business.nome,
+                      text: business.descricao,
+                      url: shareUrl
+                    }).catch(() => {
+                      navigator.clipboard.writeText(shareUrl);
+                    });
+                  } else {
+                    navigator.clipboard.writeText(shareUrl);
+                  }
+                }}
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
-            <MapPin className="h-4 w-4 shrink-0" />
-            <span className="truncate">{business.endereco || 'Endereço não informado'}{business.cidade ? `, ${business.cidade}` : ''}</span>
-          </div>
-          <div className="mt-auto flex items-center justify-between pt-2">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">A partir de</span>
-              <span className="font-bold text-lg text-primary">{formatPrice(business.servicos)}</span>
-            </div>
-            <Button size="sm" variant="secondary" className="group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-              Ver mais
-            </Button>
+          {business.descricao && (
+            <p className="text-sm text-muted-foreground line-clamp-3 mb-3 italic leading-snug">
+              {business.descricao}
+            </p>
+          )}
+          <div className="flex items-start gap-1 text-[11px] text-muted-foreground mb-4 min-w-0">
+            <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <span className="truncate flex-1">
+              {[business.cidade, business.estado].filter(Boolean).join(', ') || 'Endereço não informado'}
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -108,13 +162,16 @@ export default function ClientExplorePage() {
 
   // Filter businesses
   const filteredBusinesses = (businesses || []).filter((business: any) => {
+    const cats = parseCategories(business.categoria);
     const matchesSearch =
       business.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (business.categoria || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (business.descricao || '').toLowerCase().includes(searchQuery.toLowerCase());
+      cats.some((c: string) => c.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (business.descricao || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (business.cidade || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
-      selectedCategory === 'Todos' || business.categoria === selectedCategory;
+      selectedCategory === 'Todos' ||
+      cats.includes(selectedCategory);
 
     return matchesSearch && matchesCategory;
   });
@@ -156,7 +213,7 @@ export default function ClientExplorePage() {
         </div>
 
         {/* Category Filters */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-4 mb-8 scrollbar-hide">
+        <div className="flex items-center gap-3 overflow-x-auto py-4 px-2 -mx-2 -my-2 mb-8 scrollbar-hide">
           {categories.map((category) => (
             <button
               key={category}
@@ -213,12 +270,14 @@ export default function ClientExplorePage() {
       {/* Footer */}
       <footer className="border-t border-border mt-16 py-12 bg-muted/20">
         <div className="container max-w-6xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Calendar className="h-5 w-5 text-primary" />
-            <span className="font-bold">PrimeBooking</span>
+          <div className="flex flex-col items-center justify-center gap-2 mb-4">
+            <div className="h-10 w-10 rounded-xl overflow-hidden shadow-soft">
+              <img src="/favicon.png" alt="Logo" className="h-full w-full object-cover" />
+            </div>
+            <span className="font-bold text-lg">PrimeBooking</span>
           </div>
           <p className="text-muted-foreground text-sm">
-            © 2024 PrimeBooking. A plataforma definitiva para agendamentos online.
+            © {new Date().getFullYear()} PrimeBooking. A plataforma definitiva para agendamentos online.
           </p>
         </div>
       </footer>

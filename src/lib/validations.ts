@@ -135,9 +135,12 @@ export const empresaSettingsSchema = z.object({
     .length(2, 'Estado inválido (UF)')
     .toUpperCase(),
   whatsapp: z.string().trim().min(8, 'WhatsApp muito curto').optional(),
-  categoria: z.string().trim().max(50).optional(),
+  categoria: z.array(z.string()).default([]),
   imagem_url: z.string().trim().url('URL da imagem inválida').optional().or(z.literal('')),
   descricao: z.string().trim().max(500).optional(),
+  horario_abertura: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Horário inválido').optional(),
+  horario_fechamento: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Horário inválido').optional(),
+  dias_funcionamento: z.array(z.string()).default(['seg', 'ter', 'qua', 'qui', 'sex', 'sab']),
 });
 
 export type EmpresaSettingsFormData = z.infer<typeof empresaSettingsSchema>;

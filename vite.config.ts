@@ -12,6 +12,10 @@ export default defineConfig({
     host: true,
     port: 8080,
   },
+  preview: {
+    host: true,
+    port: 9000,
+  },
   plugins: [react()],
   resolve: {
     alias: {

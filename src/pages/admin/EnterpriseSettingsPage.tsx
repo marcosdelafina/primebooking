@@ -2,13 +2,15 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, MapPin, Save, Loader2, ExternalLink, Globe } from 'lucide-react';
+import { Star, MessageSquare, Building2, MapPin, Save, Loader2, ExternalLink, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getEmpresa, updateEmpresa, getEstados, getMunicipios } from '@/lib/supabase-services';
+import { getEmpresa, updateEmpresa, getEstados, getMunicipios, getStoreReview, submitReview } from '@/lib/supabase-services';
 import { empresaSettingsSchema, type EmpresaSettingsFormData } from '@/lib/validations';
 import { formatDocument, formatCEP } from '@/lib/document-utils';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,8 +18,9 @@ import { useToast } from '@/components/ui/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronsUpDown } from 'lucide-react';
+import { Check, Clock, ChevronsUpDown } from 'lucide-react';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
 export default function EnterpriseSettingsPage() {
     const { user } = useAuth();
@@ -30,6 +33,9 @@ export default function EnterpriseSettingsPage() {
         queryFn: () => getEmpresa(empresaId),
         enabled: !!empresaId,
     });
+
+    // Realtime Sync
+    useSupabaseRealtime('empresas', empresaId, [['empresa', empresaId]]);
 
     const { data: estados = [] } = useQuery({
         queryKey: ['estados'],
@@ -50,9 +56,12 @@ export default function EnterpriseSettingsPage() {
             cidade: '',
             estado: '',
             whatsapp: '',
-            categoria: '',
+            categoria: [],
             imagem_url: '',
             descricao: '',
+            horario_abertura: '09:00',
+            horario_fechamento: '18:00',
+            dias_funcionamento: ['seg', 'ter', 'qua', 'qui', 'sex', 'sab'],
         },
     });
 
@@ -79,9 +88,40 @@ export default function EnterpriseSettingsPage() {
                 cidade: empresa.cidade || '',
                 estado: empresa.estado || '',
                 whatsapp: empresa.whatsapp || '',
-                categoria: empresa.categoria || '',
+                categoria: (() => {
+                    const raw = empresa.categoria;
+                    if (!raw) return [];
+
+                    let categories: string[] = [];
+                    if (Array.isArray(raw)) {
+                        // If it's a stringified JSON array inside another array, unwrap it
+                        if (raw.length === 1 && typeof raw[0] === 'string' && raw[0].startsWith('[')) {
+                            try {
+                                const parsed = JSON.parse(raw[0]);
+                                if (Array.isArray(parsed)) categories = parsed;
+                                else categories = raw;
+                            } catch (e) { categories = raw; }
+                        } else {
+                            categories = raw;
+                        }
+                    } else if (typeof raw === 'string' && raw.startsWith('[')) {
+                        try {
+                            const parsed = JSON.parse(raw);
+                            if (Array.isArray(parsed)) categories = parsed;
+                            else categories = [raw];
+                        } catch (e) { categories = [raw]; }
+                    } else {
+                        categories = [raw];
+                    }
+
+                    // Filter out any "dirty" JSON strings that might have slipped into the array
+                    return categories.filter(c => typeof c === 'string' && !c.startsWith('['));
+                })(),
                 imagem_url: empresa.imagem_url || '',
                 descricao: empresa.descricao || '',
+                horario_abertura: empresa.horario_abertura || '09:00',
+                horario_fechamento: empresa.horario_fechamento || '18:00',
+                dias_funcionamento: empresa.dias_funcionamento || ['seg', 'ter', 'qua', 'qui', 'sex', 'sab'],
             });
         }
     }, [empresa, form]);
@@ -99,6 +139,39 @@ export default function EnterpriseSettingsPage() {
             toast({
                 title: 'Erro ao salvar',
                 description: error.message || 'Ocorreu um erro ao atualizar os dados.',
+                variant: 'destructive',
+            });
+        },
+    });
+
+    const { data: existingReview, refetch: refetchReview } = useQuery({
+        queryKey: ['store-review', empresaId, user?.id],
+        queryFn: () => getStoreReview(empresaId, user?.id || ''),
+        enabled: !!empresaId && !!user?.id,
+    });
+
+    const [rating, setRating] = React.useState(0);
+    const [comment, setComment] = React.useState('');
+
+    const reviewMutation = useMutation({
+        mutationFn: (data: { nota: number; comentario?: string }) =>
+            submitReview({
+                empresa_id: empresaId,
+                usuario_id: user?.id || '',
+                nota: data.nota,
+                comentario: data.comentario
+            }),
+        onSuccess: () => {
+            refetchReview();
+            toast({
+                title: 'Avaliação enviada',
+                description: 'Obrigado pelo seu feedback! Ele será analisado pela nossa equipe.',
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Erro ao enviar',
+                description: error.message || 'Ocorreu um erro ao enviar sua avaliação.',
                 variant: 'destructive',
             });
         },
@@ -170,19 +243,34 @@ export default function EnterpriseSettingsPage() {
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="categoria">Categoria Principal</Label>
+                                    <Label htmlFor="categoria">Categorias do Estabelecimento</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
                                                 role="combobox"
-                                                className="w-full justify-between font-normal"
+                                                className="w-full justify-between font-normal h-auto min-h-10 py-2"
                                             >
-                                                {form.watch('categoria') || "Selecione uma categoria"}
+                                                <div className="flex flex-wrap gap-1">
+                                                    {(() => {
+                                                        const cats = form.watch('categoria') || [];
+                                                        const cleanCats = cats.filter((c: string) => !c.startsWith('['));
+
+                                                        if (cleanCats.length === 0) {
+                                                            return <span className="text-muted-foreground">Selecione as categorias</span>;
+                                                        }
+
+                                                        return cleanCats.map((cat: string) => (
+                                                            <Badge key={cat} variant="secondary" className="font-medium text-[10px] bg-primary/10 text-primary hover:bg-primary/20 border-none">
+                                                                {cat}
+                                                            </Badge>
+                                                        ));
+                                                    })()}
+                                                </div>
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-[300px] p-0">
+                                        <PopoverContent className="w-[300px] p-0" align="start">
                                             <Command>
                                                 <CommandInput placeholder="Buscar categoria..." />
                                                 <CommandList>
@@ -192,12 +280,22 @@ export default function EnterpriseSettingsPage() {
                                                             <CommandItem
                                                                 key={cat}
                                                                 value={cat}
-                                                                onSelect={() => form.setValue('categoria', cat)}
+                                                                onSelect={() => {
+                                                                    const current = form.getValues('categoria') || [];
+                                                                    const next = current.includes(cat)
+                                                                        ? current.filter(c => c !== cat)
+                                                                        : [...current, cat];
+                                                                    form.setValue('categoria', next, { shouldValidate: true, shouldDirty: true });
+                                                                }}
                                                             >
-                                                                <Checkbox
-                                                                    checked={form.watch('categoria') === cat}
-                                                                    className="mr-2"
-                                                                />
+                                                                <div className={cn(
+                                                                    "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                                                    form.watch('categoria')?.includes(cat)
+                                                                        ? "bg-primary text-primary-foreground"
+                                                                        : "opacity-50 [&_svg]:invisible"
+                                                                )}>
+                                                                    <Check className="h-4 w-4" />
+                                                                </div>
                                                                 {cat}
                                                             </CommandItem>
                                                         ))}
@@ -496,11 +594,167 @@ export default function EnterpriseSettingsPage() {
                                             </Command>
                                         </PopoverContent>
                                     </Popover>
-                                    {form.formState.errors.cidade && (
-                                        <p className="text-sm text-destructive">{form.formState.errors.cidade.message}</p>
-                                    )}
                                 </div>
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <Clock className="h-5 w-5 text-primary" />
+                                <CardTitle>Horário de Funcionamento</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Defina os dias e horários em que seu estabelecimento está aberto.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="horario_abertura">Início do Expediente</Label>
+                                    <Input
+                                        id="horario_abertura"
+                                        type="time"
+                                        {...form.register('horario_abertura')}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="horario_fechamento">Fim do Expediente</Label>
+                                    <Input
+                                        id="horario_fechamento"
+                                        type="time"
+                                        {...form.register('horario_fechamento')}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <Label>Dias de Atendimento</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { id: 'seg', label: 'Segunda' },
+                                        { id: 'ter', label: 'Terça' },
+                                        { id: 'qua', label: 'Quarta' },
+                                        { id: 'qui', label: 'Quinta' },
+                                        { id: 'sex', label: 'Sexta' },
+                                        { id: 'sab', label: 'Sábado' },
+                                        { id: 'dom', label: 'Domingo' },
+                                    ].map((dia) => {
+                                        const isSelected = form.watch('dias_funcionamento')?.includes(dia.id);
+                                        return (
+                                            <Button
+                                                key={dia.id}
+                                                type="button"
+                                                variant={isSelected ? "default" : "outline"}
+                                                size="sm"
+                                                className={cn(
+                                                    "rounded-full px-4 transition-all",
+                                                    isSelected ? "shadow-md shadow-primary/20" : "text-muted-foreground"
+                                                )}
+                                                onClick={() => {
+                                                    const current = form.getValues('dias_funcionamento') || [];
+                                                    const next = current.includes(dia.id)
+                                                        ? current.filter(d => d !== dia.id)
+                                                        : [...current, dia.id];
+                                                    form.setValue('dias_funcionamento', next, { shouldValidate: true, shouldDirty: true });
+                                                }}
+                                            >
+                                                {dia.label}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                {form.formState.errors.dias_funcionamento && (
+                                    <p className="text-sm text-destructive">{form.formState.errors.dias_funcionamento.message}</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-primary/20 bg-primary/5">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <Star className="h-5 w-5 text-primary fill-primary" />
+                                <CardTitle>Avalie o PrimeBooking</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Sua opinião é fundamental para evoluirmos a plataforma.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {existingReview ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                <Star
+                                                    key={s}
+                                                    className={cn(
+                                                        "h-5 w-5",
+                                                        s <= existingReview.nota ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
+                                        <Badge variant="outline" className="capitalize">
+                                            {existingReview.status === 'active' ? 'Publicado' : 'Em moderação'}
+                                        </Badge>
+                                    </div>
+                                    {existingReview.comentario && (
+                                        <p className="text-sm italic text-muted-foreground">
+                                            "{existingReview.comentario}"
+                                        </p>
+                                    )}
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Avaliação enviada em {new Date(existingReview.created_at).toLocaleDateString('pt-BR')}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="flex flex-col gap-2">
+                                        <Label>Sua nota</Label>
+                                        <div className="flex gap-1">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                                <button
+                                                    key={s}
+                                                    type="button"
+                                                    onClick={() => setRating(s)}
+                                                    className="transition-transform hover:scale-110"
+                                                >
+                                                    <Star
+                                                        className={cn(
+                                                            "h-8 w-8",
+                                                            s <= rating ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"
+                                                        )}
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="review-comment">Seu comentário (opcional)</Label>
+                                        <div className="relative">
+                                            <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                            <textarea
+                                                id="review-comment"
+                                                placeholder="Conte o que está achando da plataforma..."
+                                                className="w-full min-h-[100px] rounded-md border border-input bg-background px-9 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                value={comment}
+                                                onChange={(e) => setComment(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        onClick={() => reviewMutation.mutate({ nota: rating, comentario: comment })}
+                                        disabled={rating === 0 || reviewMutation.isPending}
+                                        variant="default"
+                                    >
+                                        {reviewMutation.isPending ? "Enviando..." : "Enviar Avaliação"}
+                                    </Button>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 

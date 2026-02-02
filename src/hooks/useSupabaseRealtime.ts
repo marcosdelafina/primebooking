@@ -10,25 +10,29 @@ import { supabase } from '@/lib/supabase';
  */
 export function useSupabaseRealtime(
     table: string,
-    empresaId: string,
-    queryKeys: any[][]
+    empresaId?: string,
+    queryKeys: any[][] = []
 ) {
     const queryClient = useQueryClient();
 
     useEffect(() => {
-        if (!empresaId) return;
+        // If queryKeys is empty, we don't have anything to invalidate
+        if (queryKeys.length === 0) return;
 
-        console.log(`[Realtime] Subscribing to ${table} for company ${empresaId}`);
+        console.log(`[Realtime] Subscribing to ${table}${empresaId ? ` for company ${empresaId}` : ' (global)'}`);
+
+        const channelName = empresaId ? `public:${table}:empresa_id=eq.${empresaId}` : `public:${table}:global`;
+        const filter = empresaId ? `empresa_id=eq.${empresaId}` : undefined;
 
         const channel = supabase
-            .channel(`public:${table}:empresa_id=eq.${empresaId}`)
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 {
                     event: '*',
                     schema: 'public',
                     table: table,
-                    filter: `empresa_id=eq.${empresaId}`,
+                    filter: filter,
                 },
                 (payload) => {
                     console.log(`[Realtime] Change detected in ${table}:`, payload);

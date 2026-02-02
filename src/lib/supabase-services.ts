@@ -153,10 +153,53 @@ export async function getClientes(empresaId: string): Promise<Cliente[]> {
     return data || [];
 }
 
+export async function getClienteByTelefone(empresaId: string, telefone: string): Promise<Cliente | null> {
+    const rawPhone = telefone.trim();
+    const normalizedPhone = '+' + rawPhone.replace(/\D/g, '');
+
+    // 1. Try normalized search
+    let { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .eq('telefone', normalizedPhone)
+        .maybeSingle();
+
+    if (error) throw error;
+
+    // 2. Fallback to raw search for historical "dirty" data
+    if (!data && rawPhone !== normalizedPhone) {
+        const { data: dirtyData, error: dirtyError } = await supabase
+            .from('clientes')
+            .select('*')
+            .eq('empresa_id', empresaId)
+            .eq('telefone', rawPhone)
+            .maybeSingle();
+
+        if (dirtyError) throw dirtyError;
+
+        if (dirtyData) {
+            // Found a dirty record! Update it to normalized format for future efficiency
+            const { data: updated, error: updateError } = await supabase
+                .from('clientes')
+                .update({ telefone: normalizedPhone })
+                .eq('id', dirtyData.id)
+                .select()
+                .single();
+
+            if (!updateError) return updated;
+            return dirtyData;
+        }
+    }
+
+    return data;
+}
+
 export async function createCliente(empresaId: string, data: Partial<Cliente>): Promise<Cliente> {
+    const normalizedPhone = data.telefone ? '+' + data.telefone.replace(/\D/g, '') : undefined;
     const { data: newCliente, error } = await supabase
         .from('clientes')
-        .insert([{ ...data, empresa_id: empresaId }])
+        .insert([{ ...data, empresa_id: empresaId, telefone: normalizedPhone }])
         .select()
         .single();
 
@@ -165,9 +208,13 @@ export async function createCliente(empresaId: string, data: Partial<Cliente>): 
 }
 
 export async function updateCliente(id: string, data: Partial<Cliente>): Promise<Cliente> {
+    const updateData = { ...data };
+    if (updateData.telefone) {
+        updateData.telefone = '+' + updateData.telefone.replace(/\D/g, '');
+    }
     const { data: updatedCliente, error } = await supabase
         .from('clientes')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -270,3 +317,178 @@ export async function getPaises(): Promise<any[]> {
     if (error) throw error;
     return data || [];
 }
+
+// ============ Plataforma Avaliacoes ============
+
+export async function getPublicReviews() {
+    const { data, error } = await supabase
+        .from('plataforma_avaliacoes')
+        .select(`
+            id,
+            nota,
+            comentario,
+            created_at,
+            empresa:empresas(nome)
+        `)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function getStoreReview(empresaId: string, usuarioId: string) {
+    const { data, error } = await supabase
+        .from('plataforma_avaliacoes')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .eq('usuario_id', usuarioId)
+        .maybeSingle();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function submitReview(data: {
+    empresa_id: string;
+    usuario_id: string;
+    nota: number;
+    comentario?: string;
+}) {
+    const { data: newReview, error } = await supabase
+        .from('plataforma_avaliacoes')
+        .insert([data])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return newReview;
+}
+
+export async function getAllReviews() {
+    const { data, error } = await supabase
+        .from('plataforma_avaliacoes')
+        .select(`
+            *,
+            empresa:empresas(nome),
+            usuario:usuarios(nome)
+        `)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function updateReviewStatus(id: string, status: 'pending' | 'active' | 'inactive') {
+    const { data, error } = await supabase
+        .from('plataforma_avaliacoes')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteReview(id: string) {
+    const { error } = await supabase
+        .from('plataforma_avaliacoes')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
+// ============ Estabelecimento Avaliacoes (Client-to-Business) ============
+
+export async function getBusinessReviews(empresaId: string) {
+    const { data, error } = await supabase
+        .from('avaliacoes_empresa')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function submitBusinessReview(data: {
+    empresa_id: string;
+    cliente_id?: string;
+    cliente_nome: string;
+    nota: number;
+    comentario?: string;
+}) {
+    const { data: newReview, error } = await supabase
+        .from('avaliacoes_empresa')
+        .insert([data])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return newReview;
+}
+
+export async function getAllBusinessReviews(empresaId: string) {
+    const { data, error } = await supabase
+        .from('avaliacoes_empresa')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function updateBusinessReviewStatus(id: string, status: 'pending' | 'active' | 'inactive') {
+    const { data, error } = await supabase
+        .from('avaliacoes_empresa')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteBusinessReview(id: string) {
+    const { error } = await supabase
+        .from('avaliacoes_empresa')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
+// ============ Likes (Curtidas) ============
+
+export async function getLikesCount(targetId: string = 'global') {
+    const { data, error } = await supabase
+        .from('likes_counter')
+        .select('total_likes')
+        .eq('id', targetId)
+        .maybeSingle();
+
+    if (error) {
+        console.error(`Error fetching likes for ${targetId}:`, error);
+        return 0;
+    }
+    return Number(data?.total_likes || 0);
+}
+
+export async function incrementLikes(targetId: string, sessionId: string) {
+    const { data, error } = await supabase
+        .rpc('increment_likes', {
+            p_target_id: targetId,
+            p_session_id: sessionId
+        });
+
+    if (error) throw error;
+    return Number(data);
+}
+
+export const getGlobalLikes = () => getLikesCount('global');
+export const incrementGlobalLikes = (sessionId: string) => incrementLikes('global', sessionId);

@@ -51,7 +51,7 @@ import { useToast } from '@/hooks/use-toast';
 import { servicoSchema, type ServicoFormData } from '@/lib/validations';
 import type { Servico } from '@/types/entities';
 import { cn } from '@/lib/utils';
-import { formatCurrency, parseCurrency } from '@/lib/document-utils';
+import { formatCurrency } from '@/lib/document-utils';
 
 // Service Card Component
 function ServiceCard({
@@ -554,10 +554,11 @@ export default function ServicesPage() {
                         <FormControl>
                           <Input
                             placeholder="0,00"
-                            value={formatCurrency(String(Math.round((parseCurrency(field.value) * 100))))}
+                            value={formatCurrency(String(Math.round(field.value * 100)))}
                             onChange={(e) => {
-                              const numericValue = parseCurrency(e.target.value);
-                              field.onChange(numericValue);
+                              const digits = e.target.value.replace(/\D/g, '');
+                              const cents = parseInt(digits || '0');
+                              field.onChange(cents / 100);
                             }}
                           />
                         </FormControl>

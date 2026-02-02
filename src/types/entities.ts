@@ -7,6 +7,24 @@ export interface Empresa {
   slug: string;
   plano: 'basic' | 'pro' | 'enterprise';
   whatsapp_number_id?: string;
+  documento?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  whatsapp?: string;
+  categoria?: string[];
+  imagem_url?: string;
+  galeria?: string[];
+  descricao?: string;
+  horario_abertura?: string;
+  horario_fechamento?: string;
+  dias_funcionamento?: string[];
+  rating?: number;
+  avaliacoes?: number;
   config: EmpresaConfig;
   created_at: string;
 }
@@ -24,6 +42,7 @@ export interface Usuario {
   nome: string;
   email: string;
   role: 'owner' | 'admin' | 'member';
+  is_admin_global: boolean;
   created_at: string;
 }
 
@@ -116,6 +135,7 @@ export interface AuthUser {
   nome: string;
   empresa_id: string;
   role: Usuario['role'];
+  is_admin_global: boolean;
 }
 
 // API Response types
@@ -131,4 +151,34 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   hasMore: boolean;
+}
+
+export interface BillingEmpresa {
+  id: string;
+  empresa_id: string;
+  valor_mensal: number;
+  billing_status: 'ATIVA' | 'INADIMPLENTE' | 'SUSPENSA';
+  ciclo_atual?: string;
+  data_renovacao?: string;
+  data_onboarding: string;
+  data_inicio_ciclo?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlataformaAvaliacao {
+  id: string;
+  empresa_id: string;
+  usuario_id: string;
+  nota: number;
+  comentario?: string;
+  status: 'pending' | 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+  empresa?: {
+    nome: string;
+  };
+  usuario?: {
+    nome: string;
+  };
 }

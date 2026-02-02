@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, Eye, EyeOff, Loader2 } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Building2, // Added Building2
+  CheckCircle2 // Added CheckCircle2
+} from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle'; // Added ThemeToggle import
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -70,15 +77,18 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/20 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/20 flex flex-col relative">
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       {/* Header */}
       <header className="p-6">
-        <Link to="/" className="flex items-center gap-2 w-fit">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-            <Calendar className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold text-foreground">PrimeBooking</span>
-        </Link>
+        <div className="flex flex-col items-center gap-2 mb-8">
+          <Link to="/" className="h-12 w-12 rounded-xl overflow-hidden flex items-center justify-center">
+            <img src="/favicon.png" alt="PrimeBooking Logo" className="h-full w-full object-cover" />
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight">Crie sua conta</h1>
+        </div>
       </header>
 
       {/* Main Content */}

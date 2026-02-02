@@ -109,11 +109,11 @@ export const mockBusinesses: Business[] = [
         email: 'ana@studiobeauty.com',
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana',
         disponibilidade: {
-          seg: [{ inicio: '09:00', fim: '18:00' }],
-          ter: [{ inicio: '09:00', fim: '18:00' }],
-          qua: [{ inicio: '09:00', fim: '18:00' }],
-          qui: [{ inicio: '09:00', fim: '18:00' }],
-          sex: [{ inicio: '09:00', fim: '18:00' }],
+          seg: [{ inicio: '09:00', fim: '18:00', ativo: true }],
+          ter: [{ inicio: '09:00', fim: '18:00', ativo: true }],
+          qua: [{ inicio: '09:00', fim: '18:00', ativo: true }],
+          qui: [{ inicio: '09:00', fim: '18:00', ativo: true }],
+          sex: [{ inicio: '09:00', fim: '18:00', ativo: true }],
         },
         servicos_ids: ['srv-001', 'srv-002', 'srv-005'],
         ativo: true,
@@ -126,12 +126,12 @@ export const mockBusinesses: Business[] = [
         email: 'carlos@studiobeauty.com',
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos',
         disponibilidade: {
-          seg: [{ inicio: '10:00', fim: '18:00' }],
-          ter: [{ inicio: '10:00', fim: '18:00' }],
-          qua: [{ inicio: '10:00', fim: '18:00' }],
-          qui: [{ inicio: '10:00', fim: '18:00' }],
-          sex: [{ inicio: '10:00', fim: '18:00' }],
-          sab: [{ inicio: '09:00', fim: '14:00' }],
+          seg: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+          ter: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+          qua: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+          qui: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+          sex: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+          sab: [{ inicio: '09:00', fim: '14:00', ativo: true }],
         },
         servicos_ids: ['srv-001', 'srv-003', 'srv-004'],
         ativo: true,
@@ -202,11 +202,11 @@ export const mockBusinesses: Business[] = [
         email: 'ricardo@vintage.com',
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ricardo',
         disponibilidade: {
-          ter: [{ inicio: '10:00', fim: '20:00' }],
-          qua: [{ inicio: '10:00', fim: '20:00' }],
-          qui: [{ inicio: '10:00', fim: '20:00' }],
-          sex: [{ inicio: '10:00', fim: '20:00' }],
-          sab: [{ inicio: '10:00', fim: '18:00' }],
+          ter: [{ inicio: '10:00', fim: '20:00', ativo: true }],
+          qua: [{ inicio: '10:00', fim: '20:00', ativo: true }],
+          qui: [{ inicio: '10:00', fim: '20:00', ativo: true }],
+          sex: [{ inicio: '10:00', fim: '20:00', ativo: true }],
+          sab: [{ inicio: '10:00', fim: '18:00', ativo: true }],
         },
         servicos_ids: ['srv-101', 'srv-102', 'srv-103'],
         ativo: true,
@@ -265,11 +265,11 @@ export const mockBusinesses: Business[] = [
         email: 'marina@wellness.com',
         avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marina',
         disponibilidade: {
-          seg: [{ inicio: '08:00', fim: '16:00' }],
-          ter: [{ inicio: '08:00', fim: '16:00' }],
-          qua: [{ inicio: '08:00', fim: '16:00' }],
-          qui: [{ inicio: '08:00', fim: '16:00' }],
-          sex: [{ inicio: '08:00', fim: '16:00' }],
+          seg: [{ inicio: '08:00', fim: '16:00', ativo: true }],
+          ter: [{ inicio: '08:00', fim: '16:00', ativo: true }],
+          qua: [{ inicio: '08:00', fim: '16:00', ativo: true }],
+          qui: [{ inicio: '08:00', fim: '16:00', ativo: true }],
+          sex: [{ inicio: '08:00', fim: '16:00', ativo: true }],
         },
         servicos_ids: ['srv-201', 'srv-202'],
         ativo: true,
@@ -282,45 +282,62 @@ export const mockBusinesses: Business[] = [
 // Generate available time slots for a given date
 export function generateTimeSlots(
   date: Date,
-  startHour: number = 9,
-  endHour: number = 18,
+  startTimeStr: string = '09:00',
+  endTimeStr: string = '18:00',
   intervalMinutes: number = 30
 ): string[] {
   const slots: string[] = [];
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
 
-  for (let hour = startHour; hour < endHour; hour++) {
-    for (let minute = 0; minute < 60; minute += intervalMinutes) {
-      // Skip past times for today
-      if (isToday) {
-        const slotTime = new Date(date);
-        slotTime.setHours(hour, minute, 0, 0);
-        if (slotTime <= now) continue;
-      }
+  const [startHour, startMinute] = startTimeStr.split(':').map(Number);
+  const [endHour, endMinute] = endTimeStr.split(':').map(Number);
 
-      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      
-      // Randomly mark some slots as unavailable (for demo)
-      if (Math.random() > 0.3) {
-        slots.push(timeString);
-      }
+  const startTotalMinutes = startHour * 60 + startMinute;
+  const endTotalMinutes = endHour * 60 + endMinute;
+
+  for (let totalMinutes = startTotalMinutes; totalMinutes < endTotalMinutes; totalMinutes += intervalMinutes) {
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+
+    // Skip past times for today
+    if (isToday) {
+      const slotTime = new Date(date);
+      slotTime.setHours(hour, minute, 0, 0);
+      if (slotTime <= now) continue;
+    }
+
+    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+    // Randomly mark some slots as unavailable (for demo)
+    if (Math.random() > 0.3) {
+      slots.push(timeString);
     }
   }
 
   return slots;
 }
 
-// Get next 7 days for date picker
-export function getNext7Days(): Date[] {
+// Get next 7 days for date picker, optionally filtering by open days
+export function getNext7Days(openDays?: string[]): Date[] {
   const days: Date[] = [];
   const today = new Date();
-  
-  for (let i = 0; i < 7; i++) {
+  const dayLabels = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+
+  let i = 0;
+  let count = 0;
+  // Look ahead up to 14 days to find 7 open days
+  while (count < 7 && i < 14) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
-    days.push(date);
+
+    const dayLabel = dayLabels[date.getDay()];
+    if (!openDays || openDays.includes(dayLabel)) {
+      days.push(date);
+      count++;
+    }
+    i++;
   }
-  
+
   return days;
 }

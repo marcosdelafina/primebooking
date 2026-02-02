@@ -1,9 +1,10 @@
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/components/theme-provider";
+import { AnimatedToastProvider } from "@/components/ui/animated-toast";
 
 // Auth Pages
 import WelcomePage from "@/pages/auth/WelcomePage";
@@ -20,6 +21,9 @@ import EnterpriseSettingsPage from "@/pages/admin/EnterpriseSettingsPage";
 import ClientsPage from "@/pages/admin/ClientsPage";
 import AppointmentsPage from "@/pages/admin/AppointmentsPage";
 import GoogleCallback from "@/pages/admin/GoogleCallback";
+import GlobalAdminDashboard from "@/pages/admin/GlobalAdminDashboard";
+import MinhaAssinatura from "@/pages/admin/MinhaAssinatura";
+import AdminReviewsPage from "@/pages/admin/AdminReviewsPage";
 
 // Client Pages
 import ClientExplorePage from "@/pages/client/ClientExplorePage";
@@ -87,6 +91,7 @@ function AppRoutes() {
 
       {/* Protected Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/global" element={<ProtectedRoute><GlobalAdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/services" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
       <Route path="/admin/services/new" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
       <Route path="/admin/services/:id" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
@@ -99,6 +104,8 @@ function AppRoutes() {
       <Route path="/admin/appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
       <Route path="/admin/appointments/new" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute><EnterpriseSettingsPage /></ProtectedRoute>} />
+      <Route path="/admin/reviews" element={<ProtectedRoute><AdminReviewsPage /></ProtectedRoute>} />
+      <Route path="/admin/subscription" element={<ProtectedRoute><MinhaAssinatura /></ProtectedRoute>} />
       <Route path="/admin/google-callback" element={<GoogleCallback />} />
 
       {/* Client Booking Routes (Public) */}
@@ -113,15 +120,18 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <ThemeProvider defaultTheme="light" storageKey="primebooking-theme" attribute="class">
+      <AuthProvider>
+        <TooltipProvider>
+          <AnimatedToastProvider>
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </AnimatedToastProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
