@@ -16,6 +16,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { signUpSchema, type SignUpFormData } from '@/lib/validations';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function SignUpPage() {
       telefone: data.telefone,
       password: data.password,
     });
-    
+
     if (result.success) {
       toast({
         title: 'Conta criada!',
@@ -53,6 +54,16 @@ export default function SignUpPage() {
       toast({
         title: 'Erro',
         description: result.error || 'Falha ao criar conta',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const onInvalid = (errors: any) => {
+    if (errors.password) {
+      toast({
+        title: 'Senha fraca',
+        description: 'A senha deve ter pelo menos 6 caracteres, incluir uma letra maiúscula e um número.',
         variant: 'destructive',
       });
     }
@@ -82,7 +93,7 @@ export default function SignUpPage() {
           {/* Form */}
           <div className="bg-card rounded-2xl shadow-card p-8">
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-5">
                 <FormField
                   control={form.control}
                   name="nome"
@@ -127,10 +138,8 @@ export default function SignUpPage() {
                     <FormItem>
                       <FormLabel>Telefone (WhatsApp)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="tel"
+                        <PhoneInput
                           placeholder="+5511999999999"
-                          autoComplete="tel"
                           {...field}
                         />
                       </FormControl>

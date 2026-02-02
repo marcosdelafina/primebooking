@@ -12,6 +12,8 @@ export const emailSchema = z
 export const passwordSchema = z
   .string()
   .min(6, 'Senha deve ter pelo menos 6 caracteres')
+  .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
+  .regex(/[0-9]/, 'Senha deve conter pelo menos um número')
   .max(100, 'Senha muito longa');
 
 // Phone validation (E.164 format)
