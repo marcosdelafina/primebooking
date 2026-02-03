@@ -107,8 +107,8 @@ serve(async (req) => {
             ? `${empresa.logradouro}, ${empresa.numero} - ${empresa.bairro}, ${empresa.cidade}/${empresa.estado}`
             : '';
 
-        const startTime = format(new Date(record.data_inicio), 'HH:mm');
-        const endTime = format(new Date(record.data_fim), 'HH:mm');
+        const startTime = new Date(record.data_inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+        const endTime = new Date(record.data_fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
 
         const statusLabel = {
             pendente: 'Pendente',

@@ -1,15 +1,36 @@
--- Migration: Correct Project ID for Production Triggers (qckzsvnhtenmcgqmctfn)
+-- Migration: Unified Triggers and App Settings
 -- Date: 2026-02-04
--- Description: Reverts triggers to use the Production project ID 'qckzsvnhtenmcgqmctfn'.
+-- Description: Creates a dynamic trigger system that works in all environments without hardcoded URLs.
 
 BEGIN;
 
--- 1. Appointment Notifications
+-- 1. Create App Settings Table
+CREATE TABLE IF NOT EXISTS public.app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 2. Helper function to get current project URL
+CREATE OR REPLACE FUNCTION public.get_supabase_url()
+RETURNS TEXT AS $$
+DECLARE
+    url TEXT;
+BEGIN
+    SELECT value INTO url FROM public.app_settings WHERE key = 'supabase_url';
+    RETURN COALESCE(url, 'https://PROJECT_URL_NOT_SET.supabase.co');
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
+
+-- 3. Unified Trigger Functions
+--------------------------------------------------------------------------------
+-- 3.1 Appointment Notifications
 CREATE OR REPLACE FUNCTION public.on_agendamento_notify_email()
 RETURNS TRIGGER AS $$
 DECLARE
     payload JSONB;
 BEGIN
+    -- Skip if only updated_at changed
     IF (TG_OP = 'UPDATE') THEN
         IF (row_to_json(OLD)::jsonb - 'updated_at' = row_to_json(NEW)::jsonb - 'updated_at') THEN
             RETURN NEW;
@@ -29,7 +50,7 @@ BEGIN
 
     PERFORM
         net.http_post(
-            url := 'https://qckzsvnhtenmcgqmctfn.supabase.co/functions/v1/send-appointment-notification',
+            url := public.get_supabase_url() || '/functions/v1/send-appointment-notification',
             headers := jsonb_build_object('Content-Type', 'application/json'),
             body := payload
         );
@@ -38,15 +59,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 2. Google Calendar Sync
+-- 3.2 Google Calendar Sync
 CREATE OR REPLACE FUNCTION public.on_agendamento_sync_google()
 RETURNS TRIGGER AS $$
 DECLARE
     payload JSONB;
     target_record JSONB;
 BEGIN
-    -- RECURSION PROTECTION: 
-    -- Skip if ONLY google_event_id or updated_at were changed.
+    -- RECURSION PROTECTION
     IF (TG_OP = 'UPDATE') THEN
         IF (row_to_json(OLD)::jsonb - 'google_event_id' - 'updated_at' = row_to_json(NEW)::jsonb - 'google_event_id' - 'updated_at') THEN
             RETURN NEW;
@@ -68,7 +88,7 @@ BEGIN
 
     PERFORM
         net.http_post(
-            url := 'https://qckzsvnhtenmcgqmctfn.supabase.co/functions/v1/google-calendar-sync',
+            url := public.get_supabase_url() || '/functions/v1/google-calendar-sync',
             headers := jsonb_build_object('Content-Type', 'application/json'),
             body := payload
         );
@@ -77,14 +97,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 3. Billing Notifications
+-- 3.3 Billing Notifications
 CREATE OR REPLACE FUNCTION public.on_invoice_created_notify()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'INSERT' AND NEW.status = 'PENDING') THEN
         PERFORM
             net.http_post(
-                url := 'https://qckzsvnhtenmcgqmctfn.supabase.co/functions/v1/send-billing-notification',
+                url := public.get_supabase_url() || '/functions/v1/send-billing-notification',
                 headers := jsonb_build_object('Content-Type', 'application/json'),
                 body := jsonb_build_object(
                     'empresa_id', NEW.empresa_id,
@@ -98,13 +118,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 4. Welcome Email
+-- 3.4 Welcome Email
 CREATE OR REPLACE FUNCTION public.on_user_created_welcome_notify()
 RETURNS TRIGGER AS $$
 BEGIN
     PERFORM
         net.http_post(
-            url := 'https://qckzsvnhtenmcgqmctfn.supabase.co/functions/v1/send-user-welcome',
+            url := public.get_supabase_url() || '/functions/v1/send-user-welcome',
             headers := jsonb_build_object('Content-Type', 'application/json'),
             body := jsonb_build_object(
                 'table', 'usuarios',
@@ -114,5 +134,11 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- 4. Initial Seed (Safely)
+-- This will be overridden per environment once.
+INSERT INTO public.app_settings (key, value)
+VALUES ('supabase_url', 'https://PROJECT_ID.supabase.co')
+ON CONFLICT (key) DO NOTHING;
 
 COMMIT;

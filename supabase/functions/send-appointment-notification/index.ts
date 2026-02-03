@@ -75,8 +75,18 @@ Deno.serve(async (req: Request) => {
         const { data: svcs } = await supabaseClient.from('servicos').select('nome, preco').in('id', svcIds);
         const svcNames = svcs?.map(s => s.nome).join(', ') || 'Serviço';
 
-        const dateFormatted = new Date(record.data_inicio).toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const timeStart = new Date(record.data_inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const dateFormatted = new Date(record.data_inicio).toLocaleDateString('pt-BR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            timeZone: 'America/Sao_Paulo'
+        });
+        const timeStart = new Date(record.data_inicio).toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'America/Sao_Paulo'
+        });
 
         // 4. Build Email Content
         const scenarioConfig = {
