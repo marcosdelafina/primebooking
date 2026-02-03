@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -57,6 +58,9 @@ export function AdminBillingLogsDialog({ open, onOpenChange, runId }: AdminBilli
                         Logs de Execução
                         <Badge variant="outline">#{runId?.split('-')[0]}</Badge>
                     </DialogTitle>
+                    <DialogDescription>
+                        Acompanhe o processamento detalhado deste ciclo de faturamento.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="flex-1 min-h-0 mt-4 border rounded-lg overflow-hidden bg-muted/20">

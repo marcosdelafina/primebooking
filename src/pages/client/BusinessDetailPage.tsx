@@ -129,6 +129,8 @@ export default function BusinessDetailPage() {
   });
 
   const isLoading = isBizLoading || isSvcLoading || isProLoading || isRevLoading;
+  const billingInfo = Array.isArray(business?.billing) ? business?.billing[0] : business?.billing;
+  const isSuspended = billingInfo?.billing_status === 'SUSPENSA';
 
   // Booking state
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -142,7 +144,8 @@ export default function BusinessDetailPage() {
   // Client info state
   const [clientInfo, setClientInfo] = useState({
     nome: '',
-    telefone: '+55 '
+    telefone: '+55 ',
+    email: '',
   });
 
   // Review state
@@ -280,8 +283,12 @@ export default function BusinessDetailPage() {
       if (!client) {
         client = await createCliente(business.id, {
           nome: clientInfo.nome,
-          telefone: clientInfo.telefone
+          telefone: clientInfo.telefone,
+          email: clientInfo.email
         });
+      } else if (clientInfo.email && !client.email) {
+        // Update email if it was previously empty
+        await updateCliente(client.id, { email: clientInfo.email });
       }
 
       // 2. Create Agendamento
@@ -329,7 +336,7 @@ export default function BusinessDetailPage() {
         try {
           const client = await getClienteByTelefone(business.id, clientInfo.telefone.trim());
           if (client && client.nome && !clientInfo.nome) {
-            setClientInfo(prev => ({ ...prev, nome: client.nome }));
+            setClientInfo(prev => ({ ...prev, nome: client.nome, email: client.email || prev.email }));
           }
         } catch (error) {
           console.error('Error fetching client:', error);
@@ -346,7 +353,7 @@ export default function BusinessDetailPage() {
     setSelectedServices([]);
     setSelectedTime(null);
     setSelectedProfessionalId('any');
-    setClientInfo({ nome: '', telefone: '+55 ' });
+    setClientInfo({ nome: '', telefone: '+55 ', email: '' });
   };
 
   const handleStartBooking = () => {
@@ -763,11 +770,19 @@ export default function BusinessDetailPage() {
                   )}
                 </div>
 
-                {/* Book Button */}
-                <Button className="w-full h-12 text-base" onClick={handleStartBooking}>
+                <Button
+                  className="w-full h-12 text-base"
+                  onClick={handleStartBooking}
+                  disabled={isSuspended}
+                >
                   <Calendar className="h-5 w-5 mr-2" />
-                  Agendar agora
+                  {isSuspended ? 'Temporariamente indisponível' : 'Agendar agora'}
                 </Button>
+                {isSuspended && (
+                  <p className="text-[11px] text-center text-red-500 font-medium mt-2">
+                    Este estabelecimento não está aceitando novos agendamentos no momento.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -790,8 +805,9 @@ export default function BusinessDetailPage() {
               onClick={handleStartBooking}
               size="lg"
               className="bg-white text-primary hover:bg-white/90 font-bold px-8 rounded-xl shadow-lg transition-transform active:scale-95"
+              disabled={isSuspended}
             >
-              Agendar Agora
+              {isSuspended ? 'Indisponível' : 'Agendar Agora'}
               <ChevronRight className="h-5 w-5 ml-1" />
             </Button>
           </div>
@@ -1124,6 +1140,17 @@ export default function BusinessDetailPage() {
                         value={clientInfo.nome}
                         onChange={(e) => setClientInfo(prev => ({ ...prev, nome: e.target.value }))}
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-mail (opcional)</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="para receber confirmações"
+                        value={clientInfo.email}
+                        onChange={(e) => setClientInfo(prev => ({ ...prev, email: e.target.value }))}
+                      />
+                      <p className="text-[10px] text-muted-foreground">Enviaremos uma cópia do agendamento para este e-mail.</p>
                     </div>
                   </div>
 

@@ -107,7 +107,7 @@ export async function getEmpresa(empresaId: string): Promise<any> {
 export async function getEmpresaBySlug(slug: string): Promise<any> {
     const { data, error } = await supabase
         .from('empresas')
-        .select('*')
+        .select('*, billing:billing_empresa(billing_status)')
         .eq('slug', slug)
         .single();
 
