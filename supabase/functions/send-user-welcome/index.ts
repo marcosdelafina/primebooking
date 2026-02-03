@@ -44,7 +44,7 @@ Deno.serve(async (req: Request) => {
                     .from('empresas')
                     .select('nome')
                     .eq('id', user.empresa_id)
-                    .single();
+                    .maybeSingle();
 
                 companyName = company?.nome || "Sua Empresa";
             }
@@ -101,7 +101,7 @@ Deno.serve(async (req: Request) => {
         console.log(`[send-user-welcome] Attempting to send email to ${email}`);
 
         const result = await sendEmailWithRetry(resend, {
-            from: 'PrimeBooking <notificacoes@notifications.appsbuilding.com>',
+            from: '"PrimeBooking" <notificacoes@notifications.appsbuilding.com>',
             to: [email],
             subject: emailSubject,
             html: emailHtml

@@ -40,7 +40,7 @@ Deno.serve(async (req: Request) => {
       .from('empresas')
       .select('nome')
       .eq('id', empresa_id)
-      .single();
+      .maybeSingle();
 
     const { data: owner } = await supabaseClient
       .from('usuarios')
@@ -48,7 +48,7 @@ Deno.serve(async (req: Request) => {
       .eq('empresa_id', empresa_id)
       .eq('role', 'admin') // Assuming owner is 'admin'
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!empresa || !owner) {
       throw new Error("Company or owner not found");
@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
     `;
 
     const result = await sendEmailWithRetry(resend, {
-      from: 'Financeiro PrimeBooking <financeiro@notifications.appsbuilding.com>',
+      from: '"Financeiro PrimeBooking" <financeiro@notifications.appsbuilding.com>',
       to: [owner.email],
       subject: `[PrimeBooking] Fatura Gerada - ${empresa.nome}`,
       html: emailHtml
