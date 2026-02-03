@@ -486,7 +486,20 @@ export default function AppointmentsPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 {Object.entries(statusConfig).map(([key, config]) => (
-                                                    <DropdownMenuItem key={key} onClick={() => updateStatusMutation.mutate({ id: app.id, status: key })}>
+                                                    <DropdownMenuItem
+                                                        key={key}
+                                                        onClick={() => {
+                                                            if (!app.profissional_id) {
+                                                                toast({
+                                                                    title: 'Profissional não atribuído',
+                                                                    description: 'Defina um profissional antes de alterar o status.',
+                                                                    variant: 'destructive',
+                                                                });
+                                                                return;
+                                                            }
+                                                            updateStatusMutation.mutate({ id: app.id, status: key });
+                                                        }}
+                                                    >
                                                         <config.icon className="h-4 w-4 mr-2" />
                                                         {config.label}
                                                     </DropdownMenuItem>

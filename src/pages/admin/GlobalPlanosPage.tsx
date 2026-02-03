@@ -98,7 +98,9 @@ export default function GlobalPlanosPage() {
     const handleSavePlano = async () => {
         try {
             if (selectedPlano?.id && !isPrecosDialogOpen) {
-                await updatePlano(selectedPlano.id, planoForm);
+                // Remove non-column fields that might be in the form state from the fetch
+                const { precos, id, created_at, ...updateData } = planoForm as any;
+                await updatePlano(selectedPlano.id, updateData);
                 toast.success("Plano atualizado com sucesso!");
             } else if (!selectedPlano) {
                 await createPlano(planoForm);

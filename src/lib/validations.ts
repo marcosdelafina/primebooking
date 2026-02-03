@@ -123,7 +123,7 @@ export const empresaSettingsSchema = z.object({
     .string()
     .trim()
     .min(11, 'Documento muito curto')
-    .max(14, 'Documento muito longo')
+    .max(18, 'Documento muito longo')
     .refine((val) => {
       const clean = val.replace(/[^\w]/g, '');
       if (clean.length === 11) return validateCPF(clean);

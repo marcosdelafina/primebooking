@@ -561,9 +561,12 @@ export async function createPlano(data: any) {
 }
 
 export async function updatePlano(id: string, data: any) {
+    // Defensive check: Remove fields that are not columns in the table
+    const { precos, precos_count, id: _id, created_at, ...updateData } = data;
+
     const { data: updated, error } = await supabase
         .from('planos')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

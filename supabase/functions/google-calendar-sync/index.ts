@@ -28,26 +28,42 @@ async function getAccessToken(refreshToken: string) {
 serve(async (req) => {
     try {
         const payload = await req.json();
-        console.log("Sync trigger received:", payload.type, "for table", payload.table);
-        console.log("Full Payload:", JSON.stringify(payload));
+        console.log("--- Sync trigger received ---");
+        console.log("Type:", payload.type, "Table:", payload.table);
+
+        const record = payload.type === 'DELETE' ? payload.old_record : payload.record;
+
+        if (!record) {
+            console.error("Null record received in payload");
+            return new Response(JSON.stringify({ error: "No record in payload" }), { status: 400 });
+        }
+
+        console.log("Record ID:", record.id);
+        console.log("Raw Profissional ID:", JSON.stringify(record.profissional_id));
+
+        // Safety check for professional ID - must be a valid UUID string
+        const profId = record.profissional_id;
+        const isValidUuid = typeof profId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profId);
+
+        if (!isValidUuid) {
+            console.log("Sync skipped: Professional ID is missing, null, or not a valid UUID.");
+            return new Response(JSON.stringify({ message: "Skipped: Invalid or missing professional ID" }));
+        }
 
         const supabase = createClient(
             Deno.env.get("SUPABASE_URL")!,
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
         );
 
-        const record = payload.type === 'DELETE' ? payload.old_record : payload.record;
-        console.log("Target record ID:", record.id, "Profissional ID:", record.profissional_id);
-
         // Get professional tokens
         const { data: prof, error: profError } = await supabase
             .from("profissionais")
             .select("google_refresh_token, google_calendar_id, nome")
-            .eq("id", record.profissional_id)
+            .eq("id", profId)
             .single();
 
         if (profError) {
-            console.error("Error fetching professional:", profError);
+            console.error(`Error fetching professional [${profId}]:`, JSON.stringify(profError));
             return new Response(JSON.stringify({ error: "Professional fetch failed" }), { status: 500 });
         }
 

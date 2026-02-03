@@ -403,7 +403,7 @@ export default function EnterpriseSettingsPage() {
                                     )}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="documento">CPF / CNPJ (apenas números)</Label>
+                                    <Label htmlFor="documento">CPF / CNPJ</Label>
                                     <Input
                                         id="documento"
                                         placeholder="CPF ou CNPJ (ex: 12.345.678/0001-99)"

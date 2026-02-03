@@ -9,7 +9,6 @@ import {
   Users,
   Mail,
   Phone,
-  MoreVertical,
   Pencil,
   Trash2,
   Filter,
@@ -38,12 +37,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Form,
   FormControl,
@@ -212,30 +205,40 @@ function ProfessionalCard({
               />
             </div>
             <div className="h-8 w-[1px] bg-border mx-1 hidden md:block" />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="hover:bg-accent">
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onClick={onEdit} className="cursor-pointer">
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onConnectGoogle} className="cursor-pointer">
-                  <CalendarCheck2 className="h-4 w-4 mr-2" />
-                  {isGoogleConnected ? 'Reconectar Google' : 'Conectar Google'}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={onDelete}
-                  className="text-destructive focus:text-destructive cursor-pointer"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                onClick={onEdit}
+                title="Editar Profissional"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-9 w-9 transition-colors",
+                  isGoogleConnected ? "text-green-600 hover:text-green-700 hover:bg-green-50" : "text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                )}
+                onClick={onConnectGoogle}
+                title={isGoogleConnected ? 'Reconectar Google Agenda' : 'Conectar Google Agenda'}
+              >
+                <CalendarCheck2 className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-destructive hover:text-red-700 hover:bg-red-50 transition-colors"
+                onClick={onDelete}
+                title="Excluir Profissional"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
