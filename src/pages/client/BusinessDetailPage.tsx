@@ -42,7 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { getEmpresaBySlug, getServicos, getProfissionais, createAgendamento, getClienteByTelefone, createCliente, getBusinessReviews, submitBusinessReview } from '@/lib/supabase-services';
+import { getEmpresaBySlug, getServicos, getProfissionais, createAgendamento, getClienteByTelefone, createCliente, updateCliente, getBusinessReviews, submitBusinessReview } from '@/lib/supabase-services';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { generateTimeSlots, getNext7Days } from '@/lib/booking-data';
 import type { Servico } from '@/types/entities';
