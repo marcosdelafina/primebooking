@@ -143,10 +143,15 @@ function ProfessionalCard({
                 >
                   {professional.ativo ? 'Ativo' : 'Inativo'}
                 </Badge>
-                {isGoogleConnected && (
-                  <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-600 gap-1">
+                {isGoogleConnected ? (
+                  <Badge variant="outline" className="border-green-200 bg-green-50 text-green-600 gap-1">
                     <CalendarCheck2 className="h-3 w-3" />
-                    Google Calendar
+                    Google Agenda Conectada
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-600 gap-1 animate-pulse shadow-sm">
+                    <Calendar className="h-3 w-3" />
+                    Conectar Google Agenda
                   </Badge>
                 )}
               </div>
