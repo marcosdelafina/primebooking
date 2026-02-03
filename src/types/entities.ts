@@ -5,7 +5,7 @@ export interface Empresa {
   id: string;
   nome: string;
   slug: string;
-  plano: 'basic' | 'pro' | 'enterprise';
+  plano: 'basic' | 'Básico' | 'pro' | 'enterprise';
   whatsapp_number_id?: string;
   documento?: string;
   cep?: string;

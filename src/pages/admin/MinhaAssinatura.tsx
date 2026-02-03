@@ -289,7 +289,7 @@ export default function MinhaAssinatura() {
                             <div className="text-2xl font-bold">
                                 {billing?.billing_status === 'ATIVA' ? 'Ativa' : 'Pendente'}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">Plano Professional</p>
+                            <p className="text-xs text-muted-foreground mt-1">Plano {billing?.empresa?.plano || '...'}</p>
                         </CardContent>
                     </Card>
 

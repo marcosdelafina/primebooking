@@ -81,10 +81,6 @@ export default function WelcomePage() {
             </Button>
           </div>
 
-          {/* Demo hint */}
-          <p className="text-sm text-muted-foreground pt-4">
-            Demo: <code className="bg-muted px-2 py-1 rounded text-xs">demo@primebooking.com</code> / <code className="bg-muted px-2 py-1 rounded text-xs">demo123</code>
-          </p>
 
           {/* Testimonials Section */}
           <PublicReviewsSection />

@@ -14,7 +14,7 @@ export const mockEmpresa: Empresa = {
   id: 'emp-001',
   nome: 'Studio Beauty Prime',
   slug: 'studio-beauty-prime',
-  plano: 'pro',
+  plano: 'Básico',
   whatsapp_number_id: '+5511999999999',
   config: {
     horarios: {
