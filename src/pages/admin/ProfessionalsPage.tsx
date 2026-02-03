@@ -67,7 +67,7 @@ import {
 } from '@/lib/supabase-services';
 import { profissionalSchema, type ProfissionalFormData } from '@/lib/validations';
 import type { Profissional, Servico } from '@/types/entities';
-import { cn } from '@/lib/utils';
+import { cn, getWhatsAppLink } from '@/lib/utils';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
@@ -159,15 +159,23 @@ function ProfessionalCard({
               </div>
 
               <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 mt-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="h-3.5 w-3.5" />
-                  <span className="truncate">{professional.email}</span>
-                </div>
+                <a
+                  href={`mailto:${professional.email}`}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group/link"
+                >
+                  <Mail className="h-3.5 w-3.5 group-hover/link:scale-110 transition-transform" />
+                  <span className="truncate group-hover/link:underline">{professional.email}</span>
+                </a>
                 {professional.telefone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="h-3.5 w-3.5" />
-                    <span>{professional.telefone}</span>
-                  </div>
+                  <a
+                    href={getWhatsAppLink(professional.telefone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-green-600 transition-colors group/link"
+                  >
+                    <Phone className="h-3.5 w-3.5 group-hover/link:scale-110 transition-transform" />
+                    <span className="group-hover/link:underline">{professional.telefone}</span>
+                  </a>
                 )}
                 <div className="flex items-start gap-2 text-sm text-muted-foreground sm:col-span-2">
                   <Calendar className="h-3.5 w-3.5 mt-0.5 shrink-0" />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
     Users,
@@ -15,7 +16,9 @@ import {
     CheckCircle,
     XCircle,
     EyeOff,
-    Heart
+    Heart,
+    Package,
+    LayoutGrid
 } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +44,7 @@ interface EmpresaWithBilling extends Empresa {
 }
 
 export default function GlobalAdminDashboard() {
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [runDialogOpen, setRunDialogOpen] = useState(false);
     const [logsDialogOpen, setLogsDialogOpen] = useState(false);
@@ -207,7 +211,16 @@ export default function GlobalAdminDashboard() {
                                     className="pl-9"
                                 />
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                    onClick={() => navigate('/admin/global/planos')}
+                                >
+                                    <Package className="h-4 w-4 mr-2" />
+                                    Gerenciar Planos
+                                </Button>
                                 <Button
                                     variant="default"
                                     size="sm"
@@ -238,7 +251,7 @@ export default function GlobalAdminDashboard() {
                                     <thead>
                                         <tr className="border-b bg-muted/10">
                                             <th className="px-4 py-3 text-left font-medium">Empresa</th>
-                                            <th className="px-4 py-3 text-left font-medium">Status</th>
+                                            <th className="px-4 py-3 text-left font-medium">Plano / Status</th>
                                             <th className="px-4 py-3 text-left font-medium">Ciclo / Renovação</th>
                                             <th className="px-4 py-3 text-right font-medium">Mensalidade</th>
                                             <th className="px-4 py-3 text-right font-medium">Ações</th>
@@ -265,12 +278,17 @@ export default function GlobalAdminDashboard() {
                                                         <div className="text-xs text-muted-foreground">{company.slug}</div>
                                                     </td>
                                                     <td className="px-4 py-4">
-                                                        <Badge variant={
-                                                            company.billing?.billing_status === 'ATIVA' ? 'default' :
-                                                                company.billing?.billing_status === 'INADIMPLENTE' ? 'destructive' : 'secondary'
-                                                        }>
-                                                            {company.billing?.billing_status || 'SEM DADOS'}
-                                                        </Badge>
+                                                        <div className="flex flex-col gap-1">
+                                                            <div className="text-xs font-bold uppercase text-muted-foreground">
+                                                                {company.plano?.toUpperCase() || 'N/A'}
+                                                            </div>
+                                                            <Badge variant={
+                                                                company.billing?.billing_status === 'ATIVA' ? 'default' :
+                                                                    company.billing?.billing_status === 'INADIMPLENTE' ? 'destructive' : 'secondary'
+                                                            }>
+                                                                {company.billing?.billing_status || 'SEM DADOS'}
+                                                            </Badge>
+                                                        </div>
                                                     </td>
                                                     <td className="px-4 py-4">
                                                         <div className="text-muted-foreground">

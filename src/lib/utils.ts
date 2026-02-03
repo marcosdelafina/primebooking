@@ -11,3 +11,8 @@ export function formatCurrencyBRL(value: number) {
     currency: 'BRL',
   }).format(value);
 }
+export function getWhatsAppLink(phone: string) {
+  // Remove all non-numeric characters except +
+  const cleaned = phone.replace(/\D/g, '');
+  return `https://wa.me/${cleaned}`;
+}

@@ -59,6 +59,17 @@ export const forgotPasswordSchema = z.object({
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
+// Reset password schema
+export const resetPasswordSchema = z.object({
+  password: passwordSchema,
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Senhas não coincidem',
+  path: ['confirmPassword'],
+});
+
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+
 // OTP verification schema
 export const otpSchema = z.object({
   code: z.string().length(6, 'Código deve ter 6 dígitos').regex(/^\d+$/, 'Código deve conter apenas números'),
@@ -122,8 +133,7 @@ export const empresaSettingsSchema = z.object({
   cep: z
     .string()
     .trim()
-    .length(8, 'CEP deve ter 8 dígitos')
-    .regex(/^\d+$/, 'Apenas números'),
+    .refine((val) => val.replace(/\D/g, '').length === 8, 'CEP deve ter 8 dígitos'),
   logradouro: z.string().trim().min(1, 'Logradouro é obrigatório'),
   numero: z.string().trim().min(1, 'Número é obrigatório'),
   complemento: z.string().trim().optional(),

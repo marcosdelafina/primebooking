@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   signUp: (data: SignUpData) => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   impersonateCompany: (companyId: string) => void;
   resetImpersonation: () => void;
 }
@@ -28,34 +29,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (userId: string, email: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('id', userId)
-        .single();
+    let retries = 3;
+    let delay = 1000;
 
-      if (error) {
-        throw error;
+    while (retries > 0) {
+      try {
+        const { data, error } = await supabase
+          .rpc('get_user_profile', { p_user_id: userId });
+
+        if (error || !data) {
+          if ((!data || error?.code === 'PGRST116') && retries > 1) {
+            console.warn(`Profile not found for ${userId}, retrying in ${delay}ms... (${retries - 1} left)`);
+
+            // Try to repair on the first failure
+            if (retries === 3) {
+              console.info(`Attempting to repair user profile for ${userId}...`);
+              await supabase.rpc('debug_and_repair_user', { p_user_id: userId });
+            }
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+            retries--;
+            delay *= 2;
+            continue;
+          }
+          throw error;
+        }
+
+        const authUser: AuthUser = {
+          id: data.id,
+          email: email,
+          nome: data.nome,
+          empresa_id: data.empresa_id,
+          role: data.role,
+          is_admin_global: data.is_admin_global,
+        };
+
+        setUser(authUser);
+        setOriginalUser(authUser);
+        setIsLoading(false);
+        return; // Success
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        if (retries <= 1) {
+          setUser(null);
+        }
       }
-
-      const authUser: AuthUser = {
-        id: data.id,
-        email: email,
-        nome: data.nome,
-        empresa_id: data.empresa_id,
-        role: data.role,
-        is_admin_global: data.is_admin_global,
-      };
-
-      setUser(authUser);
-      setOriginalUser(authUser);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+      retries--;
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -119,12 +140,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             nome: data.nome,
+            full_name: data.nome, // For Dashboard compatibility
           },
         },
       });
 
       if (authError) {
         return { success: false, error: authError.message };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/admin`
+        }
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
       }
 
       return { success: true };
@@ -154,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         signUp,
+        signInWithGoogle,
         impersonateCompany,
         resetImpersonation,
       }}

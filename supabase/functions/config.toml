@@ -1,0 +1,11 @@
+[send-email]
+verify_jwt = false
+
+[resend-webhook]
+verify_jwt = false
+
+[send-user-welcome]
+verify_jwt = false
+
+[send-billing-notification]
+verify_jwt = false

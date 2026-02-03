@@ -53,6 +53,7 @@ import {
 import { clienteSchema, type ClienteFormData } from '@/lib/validations';
 import type { Cliente } from '@/types/entities';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { getWhatsAppLink } from '@/lib/utils';
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
 export default function ClientsPage() {
@@ -281,15 +282,23 @@ export default function ClientsPage() {
                                 <div className="mt-4">
                                     <h3 className="font-semibold text-lg line-clamp-1">{client.nome}</h3>
                                     <div className="mt-3 space-y-2">
-                                        <div className="flex items-center text-sm text-muted-foreground">
-                                            <Phone className="h-3.5 w-3.5 mr-2 shrink-0" />
-                                            <span className="truncate">{client.telefone}</span>
-                                        </div>
+                                        <a
+                                            href={getWhatsAppLink(client.telefone)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center text-sm text-muted-foreground hover:text-green-600 transition-colors group/link"
+                                        >
+                                            <Phone className="h-3.5 w-3.5 mr-2 shrink-0 group-hover/link:scale-110 transition-transform" />
+                                            <span className="truncate group-hover/link:underline">{client.telefone}</span>
+                                        </a>
                                         {client.email && (
-                                            <div className="flex items-center text-sm text-muted-foreground">
-                                                <Mail className="h-3.5 w-3.5 mr-2 shrink-0" />
-                                                <span className="truncate">{client.email}</span>
-                                            </div>
+                                            <a
+                                                href={`mailto:${client.email}`}
+                                                className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors group/link"
+                                            >
+                                                <Mail className="h-3.5 w-3.5 mr-2 shrink-0 group-hover/link:scale-110 transition-transform" />
+                                                <span className="truncate group-hover/link:underline">{client.email}</span>
+                                            </a>
                                         )}
                                         {client.notas && (
                                             <div className="flex items-start text-sm text-muted-foreground">

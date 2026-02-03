@@ -12,6 +12,8 @@ import LoginPage from "@/pages/auth/LoginPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import VerifyOTPPage from "@/pages/auth/VerifyOTPPage";
+import AuthConfirmPage from "@/pages/auth/AuthConfirmPage";
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 
 // Admin Pages
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -24,6 +26,7 @@ import GoogleCallback from "@/pages/admin/GoogleCallback";
 import GlobalAdminDashboard from "@/pages/admin/GlobalAdminDashboard";
 import MinhaAssinatura from "@/pages/admin/MinhaAssinatura";
 import AdminReviewsPage from "@/pages/admin/AdminReviewsPage";
+import GlobalPlanosPage from "@/pages/admin/GlobalPlanosPage";
 
 // Client Pages
 import ClientExplorePage from "@/pages/client/ClientExplorePage";
@@ -88,10 +91,13 @@ function AppRoutes() {
       <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
       <Route path="/verify-otp" element={<PublicRoute><VerifyOTPPage /></PublicRoute>} />
+      <Route path="/auth/confirm" element={<AuthConfirmPage />} />
+      <Route path="/reset-password" element={<ProtectedRoute><ResetPasswordPage /></ProtectedRoute>} />
 
       {/* Protected Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/global" element={<ProtectedRoute><GlobalAdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/global/planos" element={<ProtectedRoute><GlobalPlanosPage /></ProtectedRoute>} />
       <Route path="/admin/services" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
       <Route path="/admin/services/new" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
       <Route path="/admin/services/:id" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
@@ -125,7 +131,7 @@ const App = () => (
         <TooltipProvider>
           <AnimatedToastProvider>
             <Sonner />
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <AppRoutes />
             </BrowserRouter>
           </AnimatedToastProvider>

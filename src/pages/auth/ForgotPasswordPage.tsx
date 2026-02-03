@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validations';
-import { mockRequestPasswordReset } from '@/lib/mock-services';
+import { supabase } from '@/lib/supabase';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -34,18 +34,21 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
     try {
-      const result = await mockRequestPasswordReset(data.email);
-      if (result.data.sent) {
-        setEmailSent(true);
-        toast({
-          title: 'Email enviado!',
-          description: 'Verifique sua caixa de entrada.',
-        });
-      }
-    } catch {
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setEmailSent(true);
+      toast({
+        title: 'Email enviado!',
+        description: 'Verifique sua caixa de entrada.',
+      });
+    } catch (error: any) {
       toast({
         title: 'Erro',
-        description: 'Falha ao enviar email',
+        description: error.message || 'Falha ao enviar email',
         variant: 'destructive',
       });
     } finally {

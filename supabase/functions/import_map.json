@@ -1,0 +1,10 @@
+{
+    "imports": {
+        "std/": "https://deno.land/std@0.168.0/",
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.49.1",
+        "react": "https://esm.sh/react@18.3.1",
+        "react-dom": "https://esm.sh/react-dom@18.3.1",
+        "react-dom/server": "https://esm.sh/react-dom@18.3.1/server",
+        "@react-email/components": "https://esm.sh/@react-email/components@0.0.22?deps=react@18.3.1"
+    }
+}

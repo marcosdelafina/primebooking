@@ -492,3 +492,69 @@ export async function incrementLikes(targetId: string, sessionId: string) {
 
 export const getGlobalLikes = () => getLikesCount('global');
 export const incrementGlobalLikes = (sessionId: string) => incrementLikes('global', sessionId);
+
+// ============ Planos & Preços (Global Admin) ============
+
+export async function getPlanos() {
+    const { data, error } = await supabase
+        .from('planos')
+        .select('*, precos:plano_valores(*)')
+        .order('nome');
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function createPlano(data: any) {
+    const { data: newPlano, error } = await supabase
+        .from('planos')
+        .insert([data])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return newPlano;
+}
+
+export async function updatePlano(id: string, data: any) {
+    const { data: updated, error } = await supabase
+        .from('planos')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return updated;
+}
+
+export async function getPlanoPrecos(planoId: string) {
+    const { data, error } = await supabase
+        .from('plano_valores')
+        .select('*')
+        .eq('plano_id', planoId)
+        .order('data_inicio_vigencia', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function createPlanoPreco(data: any) {
+    const { data: newPreco, error } = await supabase
+        .from('plano_valores')
+        .insert([data])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return newPreco;
+}
+
+export async function deletePlanoPreco(id: string) {
+    const { error } = await supabase
+        .from('plano_valores')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
