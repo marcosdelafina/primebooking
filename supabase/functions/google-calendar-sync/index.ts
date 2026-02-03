@@ -60,11 +60,16 @@ serve(async (req) => {
             .from("profissionais")
             .select("google_refresh_token, google_calendar_id, nome")
             .eq("id", profId)
-            .single();
+            .maybeSingle();
 
         if (profError) {
             console.error(`Error fetching professional [${profId}]:`, JSON.stringify(profError));
             return new Response(JSON.stringify({ error: "Professional fetch failed" }), { status: 500 });
+        }
+
+        if (!prof) {
+            console.log(`Sync skipped: Professional [${profId}] not found in database.`);
+            return new Response(JSON.stringify({ message: "Skipped: Professional not found" }));
         }
 
         if (!prof?.google_refresh_token) {
@@ -77,7 +82,7 @@ serve(async (req) => {
         const calendarId = prof.google_calendar_id || "primary";
 
         // Prepare Google Event
-        const { data: client } = await supabase.from("clientes").select("nome").eq("id", record.cliente_id).single();
+        const { data: client } = await supabase.from("clientes").select("nome").eq("id", record.cliente_id).maybeSingle();
 
         // Fetch services (support both multi and single for compatibility)
         let svcList = [];
@@ -96,7 +101,7 @@ serve(async (req) => {
             .from("empresas")
             .select("logradouro, numero, bairro, cidade, estado")
             .eq("id", record.empresa_id)
-            .single();
+            .maybeSingle();
 
         const address = empresa
             ? `${empresa.logradouro}, ${empresa.numero} - ${empresa.bairro}, ${empresa.cidade}/${empresa.estado}`

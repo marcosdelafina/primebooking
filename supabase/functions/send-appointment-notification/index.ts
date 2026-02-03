@@ -37,7 +37,7 @@ Deno.serve(async (req: Request) => {
             .from('clientes')
             .select('nome, email, telefone')
             .eq('id', record.cliente_id)
-            .single();
+            .maybeSingle();
 
         if (clientError || !client?.email) {
             console.log(`[send-appointment-notification] Notification skipped: Client [${record.cliente_id}] has no email or not found.`);
@@ -68,8 +68,8 @@ Deno.serve(async (req: Request) => {
         console.log(`[send-appointment-notification] Processing scenario: ${scenario} for client: ${client.email}`);
 
         // 3. Gather Context Data (Company, Professional, Services)
-        const { data: empresa } = await supabaseClient.from('empresas').select('nome, imagem_url, whatsapp').eq('id', record.empresa_id).single();
-        const { data: professional } = await supabaseClient.from('profissionais').select('nome').eq('id', record.profissional_id).single();
+        const { data: empresa } = await supabaseClient.from('empresas').select('nome, imagem_url, whatsapp').eq('id', record.empresa_id).maybeSingle();
+        const { data: professional } = await supabaseClient.from('profissionais').select('nome').eq('id', record.profissional_id).maybeSingle();
 
         const svcIds = record.servicos_ids?.length > 0 ? record.servicos_ids : (record.servico_id ? [record.servico_id] : []);
         const { data: svcs } = await supabaseClient.from('servicos').select('nome, preco').in('id', svcIds);
