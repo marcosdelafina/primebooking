@@ -396,7 +396,7 @@ export default function EnterpriseSettingsPage() {
                                         </Button>
                                     </div>
                                     <p className="text-[10px] text-muted-foreground">
-                                        Seu link público será: <span className="font-medium text-primary">localhost:8080/book/{form.watch('slug')}</span>
+                                        Seu link público será: <span className="font-medium text-primary">{window.location.host}/book/{form.watch('slug')}</span>
                                     </p>
                                     {form.formState.errors.slug && (
                                         <p className="text-sm text-destructive">{form.formState.errors.slug.message}</p>
