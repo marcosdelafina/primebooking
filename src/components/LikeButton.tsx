@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils';
 interface LikeButtonProps {
     targetId?: string; // defaults to 'global'
     compact?: boolean;
+    minimal?: boolean;
 }
 
-export function LikeButton({ targetId = 'global', compact = false }: LikeButtonProps) {
+export function LikeButton({ targetId = 'global', compact = false, minimal = false }: LikeButtonProps) {
     const queryClient = useQueryClient();
     const [sessionId, setSessionId] = useState<string>('');
     const [hasLiked, setHasLiked] = useState<boolean>(false);
@@ -60,6 +61,23 @@ export function LikeButton({ targetId = 'global', compact = false }: LikeButtonP
         if (hasLiked || likeMutation.isPending) return;
         likeMutation.mutate();
     };
+
+    if (minimal) {
+        return (
+            <button
+                onClick={handleLike}
+                disabled={hasLiked}
+                className={cn(
+                    "flex items-center gap-1.5 transition-all active:scale-90",
+                    hasLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
+                )}
+                title={hasLiked ? 'Curtido' : 'Curtir'}
+            >
+                <Heart className={cn("h-4 w-4", hasLiked && "fill-current")} />
+                <span className="text-sm font-bold">{totalLikes}</span>
+            </button>
+        );
+    }
 
     if (compact) {
         return (

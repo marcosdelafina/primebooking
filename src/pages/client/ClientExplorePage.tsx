@@ -80,65 +80,66 @@ function BusinessCard({ business }: { business: any }) {
             alt={business.nome}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          <div className="absolute top-3 right-3 flex flex-wrap gap-1 justify-end">
-            {parseCategories(business.categoria).map((cat: string) => (
-              <Badge key={cat} className="bg-background/90 text-foreground hover:bg-background/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
-                {cat}
-              </Badge>
-            ))}
-            {parseCategories(business.categoria).length === 0 && (
-              <Badge className="bg-background/90 text-foreground hover:bg-background/90 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
-                Serviços
-              </Badge>
-            )}
-          </div>
         </div>
-        <CardContent className="p-4 flex flex-col h-[calc(100%-160px)] min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1 min-w-0">
-            <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors flex-1 min-w-0">
+        <CardContent className="p-4 flex flex-col gap-2 min-w-0">
+          {/* Line 1: Name */}
+          <div className="flex items-center min-w-0 h-7">
+            <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors min-w-0">
               {business.nome}
             </h3>
-            <div className="flex items-center gap-1 shrink-0">
-              <div className="flex items-center gap-1 mr-1">
-                <Star className="h-4 w-4 fill-warning text-warning" />
-                <span className="font-medium text-sm">{Number(business.rating || 0).toFixed(1)}</span>
-                <span className="text-muted-foreground text-xs">({business.avaliacoes || '0'})</span>
-              </div>
-              <div className="h-3 w-px bg-border mx-1" />
-              <LikeButton targetId={business.id} compact />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const shareUrl = `${window.location.origin}/book/${business.slug}`;
-                  if (navigator.share) {
-                    navigator.share({
-                      title: business.nome,
-                      text: business.descricao,
-                      url: shareUrl
-                    }).catch(() => {
-                      navigator.clipboard.writeText(shareUrl);
-                    });
-                  } else {
-                    navigator.clipboard.writeText(shareUrl);
-                  }
-                }}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
-          {business.descricao && (
-            <p className="text-sm text-muted-foreground line-clamp-3 mb-3 italic leading-snug">
-              {business.descricao}
-            </p>
-          )}
-          <div className="flex items-start gap-1 text-[11px] text-muted-foreground mb-4 min-w-0">
-            <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            <span className="truncate flex-1">
+
+          {/* Line 2: Rating (Reviews), Likes & Share */}
+          <div className="flex items-center gap-3 h-8">
+            <div className="flex items-center gap-1.5 overflow-hidden">
+              <div className="flex items-center gap-1 shrink-0">
+                <Star className="h-4 w-4 fill-warning text-warning" />
+                <span className="font-bold text-sm">{Number(business.rating || 0).toFixed(1)}</span>
+                <span className="text-muted-foreground text-xs -ml-0.5">({business.avaliacoes || '0'})</span>
+              </div>
+
+              <div className="h-4 w-px bg-border mx-1 shrink-0" />
+
+              <LikeButton targetId={business.id} minimal />
+            </div>
+
+            <div className="h-4 w-px bg-border mx-1 shrink-0" />
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const shareUrl = `${window.location.origin}/book/${business.slug}`;
+                if (navigator.share) {
+                  navigator.share({
+                    title: business.nome,
+                    text: business.descricao,
+                    url: shareUrl
+                  }).catch(() => {
+                    navigator.clipboard.writeText(shareUrl);
+                  });
+                } else {
+                  navigator.clipboard.writeText(shareUrl);
+                }
+              }}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+
+            <div className="flex-1" />
+
+            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider truncate opacity-80">
+              {parseCategories(business.categoria)[0] || 'Serviços'}
+            </span>
+          </div>
+
+          {/* Line 3: Address */}
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0 mt-0.5 h-5">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate flex-1 font-medium italic">
               {[business.cidade, business.estado].filter(Boolean).join(', ') || 'Endereço não informado'}
             </span>
           </div>

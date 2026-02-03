@@ -84,8 +84,8 @@ export default function EnterpriseSettingsPage() {
             form.reset({
                 nome: empresa.nome || '',
                 slug: empresa.slug || '',
-                documento: empresa.documento || '',
-                cep: empresa.cep || '',
+                documento: formatDocument(empresa.documento || ''),
+                cep: formatCEP(empresa.cep || ''),
                 logradouro: empresa.logradouro || '',
                 numero: empresa.numero || '',
                 complemento: empresa.complemento || '',
@@ -409,6 +409,7 @@ export default function EnterpriseSettingsPage() {
                                         placeholder="CPF ou CNPJ (ex: 12.345.678/0001-99)"
                                         maxLength={18}
                                         {...form.register('documento')}
+                                        value={form.watch('documento')}
                                         onChange={(e) => {
                                             const formatted = formatDocument(e.target.value);
                                             form.setValue('documento', formatted, { shouldValidate: true, shouldDirty: true });
@@ -452,6 +453,7 @@ export default function EnterpriseSettingsPage() {
                                         placeholder="00000-000"
                                         maxLength={9}
                                         {...form.register('cep')}
+                                        value={form.watch('cep')}
                                         onChange={(e) => {
                                             const formatted = formatCEP(e.target.value);
                                             form.setValue('cep', formatted, { shouldValidate: true, shouldDirty: true });
