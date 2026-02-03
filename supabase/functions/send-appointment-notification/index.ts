@@ -48,6 +48,8 @@ Deno.serve(async (req: Request) => {
         let scenario = '';
         if (type === 'INSERT') {
             scenario = 'REQUESTED';
+        } else if (type === 'REMINDER') {
+            scenario = 'REMINDER';
         } else if (type === 'UPDATE') {
             if (record.status === 'confirmado' && old_record?.status !== 'confirmado') {
                 scenario = 'CONFIRMED';
@@ -113,6 +115,12 @@ Deno.serve(async (req: Request) => {
                 title: "Horário Alterado! 🕒",
                 message: `Olá, ${client.nome}. O horário do seu agendamento para <strong>${empresa?.nome}</strong> foi alterado. Confira os novos detalhes abaixo.`,
                 color: "#8b5cf6"
+            },
+            REMINDER: {
+                subject: `🚀 Lembrete: Seu agendamento é AMANHÃ! - ${empresa?.nome}`,
+                title: "Lembrete Importante! ⏰",
+                message: `Olá, ${client.nome}! Passando para lembrar que você tem um agendamento marcado para amanhã em <strong>${empresa?.nome}</strong>.`,
+                color: "#f59e0b" // Amber/Orange for warning/attention
             }
         }[scenario];
 
