@@ -21,7 +21,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Check, Clock, ChevronsUpDown } from 'lucide-react';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
-import { BUSINESS_CATEGORIES } from '@/lib/constants';
 
 export default function EnterpriseSettingsPage() {
     const { user } = useAuth();

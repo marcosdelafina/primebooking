@@ -5,11 +5,8 @@ import {
     Plus,
     History,
     Edit,
-    Check,
     X,
-    Calendar,
     DollarSign,
-    Info,
     ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -49,7 +46,6 @@ import {
 import { getPlanos, createPlano, updatePlano, getPlanoPrecos, createPlanoPreco, deletePlanoPreco } from '@/lib/supabase-services';
 import { formatCurrencyBRL } from '@/lib/utils';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 export default function GlobalPlanosPage() {

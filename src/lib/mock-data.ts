@@ -1,13 +1,13 @@
 // Mock data for frontend development
 // This simulates API responses until backend is ready
 
-import type { 
-  Empresa, 
-  Usuario, 
-  Cliente, 
-  Servico, 
-  Profissional, 
-  Agendamento 
+import type {
+  Empresa,
+  Usuario,
+  Cliente,
+  Servico,
+  Profissional,
+  Agendamento
 } from '@/types/entities';
 
 export const mockEmpresa: Empresa = {
@@ -36,6 +36,7 @@ export const mockUsuario: Usuario = {
   nome: 'Maria Silva',
   email: 'maria@studiobeauty.com',
   role: 'owner',
+  is_admin_global: false,
   created_at: '2024-01-15T10:00:00Z',
 };
 
@@ -105,11 +106,11 @@ export const mockProfissionais: Profissional[] = [
     email: 'ana@studiobeauty.com',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana',
     disponibilidade: {
-      seg: [{ inicio: '09:00', fim: '12:00' }, { inicio: '14:00', fim: '18:00' }],
-      ter: [{ inicio: '09:00', fim: '12:00' }, { inicio: '14:00', fim: '18:00' }],
-      qua: [{ inicio: '09:00', fim: '12:00' }, { inicio: '14:00', fim: '18:00' }],
-      qui: [{ inicio: '09:00', fim: '12:00' }, { inicio: '14:00', fim: '18:00' }],
-      sex: [{ inicio: '09:00', fim: '12:00' }, { inicio: '14:00', fim: '18:00' }],
+      seg: [{ inicio: '09:00', fim: '12:00', ativo: true }, { inicio: '14:00', fim: '18:00', ativo: true }],
+      ter: [{ inicio: '09:00', fim: '12:00', ativo: true }, { inicio: '14:00', fim: '18:00', ativo: true }],
+      qua: [{ inicio: '09:00', fim: '12:00', ativo: true }, { inicio: '14:00', fim: '18:00', ativo: true }],
+      qui: [{ inicio: '09:00', fim: '12:00', ativo: true }, { inicio: '14:00', fim: '18:00', ativo: true }],
+      sex: [{ inicio: '09:00', fim: '12:00', ativo: true }, { inicio: '14:00', fim: '18:00', ativo: true }],
     },
     servicos_ids: ['srv-001', 'srv-002'],
     ativo: true,
@@ -122,12 +123,12 @@ export const mockProfissionais: Profissional[] = [
     email: 'carlos@studiobeauty.com',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos',
     disponibilidade: {
-      seg: [{ inicio: '10:00', fim: '18:00' }],
-      ter: [{ inicio: '10:00', fim: '18:00' }],
-      qua: [{ inicio: '10:00', fim: '18:00' }],
-      qui: [{ inicio: '10:00', fim: '18:00' }],
-      sex: [{ inicio: '10:00', fim: '18:00' }],
-      sab: [{ inicio: '09:00', fim: '14:00' }],
+      seg: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+      ter: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+      qua: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+      qui: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+      sex: [{ inicio: '10:00', fim: '18:00', ativo: true }],
+      sab: [{ inicio: '09:00', fim: '14:00', ativo: true }],
     },
     servicos_ids: ['srv-001', 'srv-003', 'srv-004'],
     ativo: true,
@@ -140,11 +141,11 @@ export const mockProfissionais: Profissional[] = [
     email: 'juliana@studiobeauty.com',
     avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Juliana',
     disponibilidade: {
-      ter: [{ inicio: '09:00', fim: '17:00' }],
-      qua: [{ inicio: '09:00', fim: '17:00' }],
-      qui: [{ inicio: '09:00', fim: '17:00' }],
-      sex: [{ inicio: '09:00', fim: '17:00' }],
-      sab: [{ inicio: '09:00', fim: '14:00' }],
+      ter: [{ inicio: '09:00', fim: '17:00', ativo: true }],
+      qua: [{ inicio: '09:00', fim: '17:00', ativo: true }],
+      qui: [{ inicio: '09:00', fim: '17:00', ativo: true }],
+      sex: [{ inicio: '09:00', fim: '17:00', ativo: true }],
+      sab: [{ inicio: '09:00', fim: '14:00', ativo: true }],
     },
     servicos_ids: ['srv-003', 'srv-004', 'srv-005'],
     ativo: true,
@@ -186,6 +187,7 @@ export const mockAgendamentos: Agendamento[] = [
     cliente_id: 'cli-001',
     profissional_id: 'prof-001',
     servico_id: 'srv-001',
+    servicos_ids: ['srv-001'],
     data_inicio: '2024-02-20T10:00:00Z',
     data_fim: '2024-02-20T10:45:00Z',
     status: 'confirmado',
@@ -198,6 +200,7 @@ export const mockAgendamentos: Agendamento[] = [
     cliente_id: 'cli-002',
     profissional_id: 'prof-002',
     servico_id: 'srv-003',
+    servicos_ids: ['srv-003'],
     data_inicio: '2024-02-20T14:00:00Z',
     data_fim: '2024-02-20T14:45:00Z',
     status: 'pendente',
@@ -210,6 +213,7 @@ export const mockAgendamentos: Agendamento[] = [
     cliente_id: 'cli-003',
     profissional_id: 'prof-003',
     servico_id: 'srv-004',
+    servicos_ids: ['srv-004'],
     data_inicio: '2024-02-20T11:00:00Z',
     data_fim: '2024-02-20T11:50:00Z',
     status: 'em_andamento',

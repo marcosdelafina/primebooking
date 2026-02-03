@@ -23,7 +23,7 @@ export default function GoogleCallback() {
             }
 
             try {
-                const { data, error } = await supabase.functions.invoke("google-calendar-auth", {
+                const { data: _data, error } = await supabase.functions.invoke("google-calendar-auth", {
                     body: { code, state },
                 });
 

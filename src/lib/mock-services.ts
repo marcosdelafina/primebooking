@@ -1,13 +1,13 @@
 // Mock API services for frontend development
 // Simulates async API calls with realistic delays
 
-import type { 
-  Servico, 
-  Profissional, 
-  Cliente, 
+import type {
+  Servico,
+  Profissional,
+  Cliente,
   Agendamento,
   ApiResponse,
-  PaginatedResponse 
+  PaginatedResponse
 } from '@/types/entities';
 import {
   mockServicos,
@@ -145,14 +145,14 @@ export async function getAgendamentos(filters?: {
 }): Promise<ApiResponse<Agendamento[]>> {
   await delay(500);
   let filtered = [...mockAgendamentos];
-  
+
   if (filters?.profissional_id) {
     filtered = filtered.filter(a => a.profissional_id === filters.profissional_id);
   }
   if (filters?.status) {
     filtered = filtered.filter(a => a.status === filters.status);
   }
-  
+
   return { data: filtered };
 }
 
@@ -171,7 +171,7 @@ export async function getDashboardMetrics(): Promise<ApiResponse<typeof mockDash
 // ============ Auth Mock ============
 export async function mockLogin(email: string, password: string): Promise<ApiResponse<{ token: string; user: { id: string; email: string; nome: string } }>> {
   await delay(1000);
-  
+
   if (email === 'demo@primebooking.com' && password === 'demo123') {
     return {
       data: {
@@ -184,7 +184,7 @@ export async function mockLogin(email: string, password: string): Promise<ApiRes
       },
     };
   }
-  
+
   return {
     data: {} as { token: string; user: { id: string; email: string; nome: string } },
     error: 'AUTH_FAILED',
@@ -194,7 +194,7 @@ export async function mockLogin(email: string, password: string): Promise<ApiRes
 
 export async function mockSignUp(data: { nome: string; email: string; telefone: string; password: string }): Promise<ApiResponse<{ success: boolean }>> {
   await delay(1000);
-  
+
   // Simulate email already exists
   if (data.email === 'existing@email.com') {
     return {
@@ -203,18 +203,18 @@ export async function mockSignUp(data: { nome: string; email: string; telefone: 
       message: 'This email is already registered',
     };
   }
-  
+
   return { data: { success: true } };
 }
 
-export async function mockVerifyOTP(telefone: string, code: string): Promise<ApiResponse<{ verified: boolean }>> {
+export async function mockVerifyOTP(_telefone: string, code: string): Promise<ApiResponse<{ verified: boolean }>> {
   await delay(800);
-  
+
   // Accept any 6-digit code for demo
   if (code.length === 6 && /^\d+$/.test(code)) {
     return { data: { verified: true } };
   }
-  
+
   return {
     data: { verified: false },
     error: 'INVALID_CODE',
@@ -222,7 +222,7 @@ export async function mockVerifyOTP(telefone: string, code: string): Promise<Api
   };
 }
 
-export async function mockRequestPasswordReset(email: string): Promise<ApiResponse<{ sent: boolean }>> {
+export async function mockRequestPasswordReset(_email: string): Promise<ApiResponse<{ sent: boolean }>> {
   await delay(800);
   return { data: { sent: true } };
 }
