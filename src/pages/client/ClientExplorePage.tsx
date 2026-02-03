@@ -8,8 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { getEmpresasPublicas } from '@/lib/supabase-services';
+import { getEmpresasPublicas, getCategoriasEmpresa } from '@/lib/supabase-services';
 import { LikeButton } from '@/components/LikeButton';
+import { BUSINESS_CATEGORIES } from '@/lib/constants';
 
 // Helper to safely parse categories (handles legacy strings and double-encoded JSON)
 const parseCategories = (raw: any): string[] => {
@@ -101,7 +102,7 @@ function BusinessCard({ business }: { business: any }) {
             <div className="flex items-center gap-1 shrink-0">
               <div className="flex items-center gap-1 mr-1">
                 <Star className="h-4 w-4 fill-warning text-warning" />
-                <span className="font-medium text-sm">{business.rating || '5.0'}</span>
+                <span className="font-medium text-sm">{Number(business.rating || 0).toFixed(1)}</span>
                 <span className="text-muted-foreground text-xs">({business.avaliacoes || '0'})</span>
               </div>
               <div className="h-3 w-px bg-border mx-1" />
@@ -148,8 +149,7 @@ function BusinessCard({ business }: { business: any }) {
   );
 }
 
-// Category Filter
-const categories = ['Todos', 'Salão de Beleza', 'Barbearia', 'Spa & Bem-estar', 'Estética'];
+// Category Filter deleted - now using DB
 
 export default function ClientExplorePage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -159,6 +159,13 @@ export default function ClientExplorePage() {
     queryKey: ['public-businesses'],
     queryFn: getEmpresasPublicas
   });
+
+  const { data: dbCategories = [] } = useQuery({
+    queryKey: ['global-categories'],
+    queryFn: getCategoriasEmpresa
+  });
+
+  const categories = ['Todos', ...dbCategories.filter(c => c.ativo).map(c => c.nome)];
 
   // Filter businesses
   const filteredBusinesses = (businesses || []).filter((business: any) => {

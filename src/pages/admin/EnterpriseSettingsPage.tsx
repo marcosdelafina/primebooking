@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Star, MessageSquare, Building2, MapPin, Save, Loader2, ExternalLink, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getEmpresa, updateEmpresa, getEstados, getMunicipios, getStoreReview, submitReview } from '@/lib/supabase-services';
+import { getEmpresa, updateEmpresa, getEstados, getMunicipios, getStoreReview, submitReview, getCategoriasEmpresa } from '@/lib/supabase-services';
 import { empresaSettingsSchema, type EmpresaSettingsFormData } from '@/lib/validations';
 import { formatDocument, formatCEP } from '@/lib/document-utils';
 import AdminLayout from '@/components/layouts/AdminLayout';
@@ -21,6 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Check, Clock, ChevronsUpDown } from 'lucide-react';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
+import { BUSINESS_CATEGORIES } from '@/lib/constants';
 
 export default function EnterpriseSettingsPage() {
     const { user } = useAuth();
@@ -40,6 +41,11 @@ export default function EnterpriseSettingsPage() {
     const { data: estados = [] } = useQuery({
         queryKey: ['estados'],
         queryFn: () => getEstados(),
+    });
+
+    const { data: dbCategories = [] } = useQuery({
+        queryKey: ['global-categories'],
+        queryFn: getCategoriasEmpresa
     });
 
     const form = useForm<EmpresaSettingsFormData>({
@@ -276,27 +282,27 @@ export default function EnterpriseSettingsPage() {
                                                 <CommandList>
                                                     <CommandEmpty>Nenhuma categoria encontrada.</CommandEmpty>
                                                     <CommandGroup>
-                                                        {['Salão de Beleza', 'Barbearia', 'Spa & Bem-estar', 'Estética', 'Saúde', 'Academia', 'Educação', 'Outros'].map((cat) => (
+                                                        {dbCategories.filter(c => c.ativo).map((cat) => (
                                                             <CommandItem
-                                                                key={cat}
-                                                                value={cat}
+                                                                key={cat.id}
+                                                                value={cat.nome}
                                                                 onSelect={() => {
                                                                     const current = form.getValues('categoria') || [];
-                                                                    const next = current.includes(cat)
-                                                                        ? current.filter(c => c !== cat)
-                                                                        : [...current, cat];
+                                                                    const next = current.includes(cat.nome)
+                                                                        ? current.filter(c => c !== cat.nome)
+                                                                        : [...current, cat.nome];
                                                                     form.setValue('categoria', next, { shouldValidate: true, shouldDirty: true });
                                                                 }}
                                                             >
                                                                 <div className={cn(
                                                                     "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                                                    form.watch('categoria')?.includes(cat)
+                                                                    form.watch('categoria')?.includes(cat.nome)
                                                                         ? "bg-primary text-primary-foreground"
                                                                         : "opacity-50 [&_svg]:invisible"
                                                                 )}>
                                                                     <Check className="h-4 w-4" />
                                                                 </div>
-                                                                {cat}
+                                                                {cat.nome}
                                                             </CommandItem>
                                                         ))}
                                                     </CommandGroup>

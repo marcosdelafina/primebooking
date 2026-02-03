@@ -27,6 +27,7 @@ import GlobalAdminDashboard from "@/pages/admin/GlobalAdminDashboard";
 import MinhaAssinatura from "@/pages/admin/MinhaAssinatura";
 import AdminReviewsPage from "@/pages/admin/AdminReviewsPage";
 import GlobalPlanosPage from "@/pages/admin/GlobalPlanosPage";
+import CategoriesManagementPage from "@/pages/admin/CategoriesManagementPage";
 
 // Client Pages
 import ClientExplorePage from "@/pages/client/ClientExplorePage";
@@ -98,6 +99,7 @@ function AppRoutes() {
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/global" element={<ProtectedRoute><GlobalAdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/global/planos" element={<ProtectedRoute><GlobalPlanosPage /></ProtectedRoute>} />
+      <Route path="/admin/global/categories" element={<ProtectedRoute><CategoriesManagementPage /></ProtectedRoute>} />
       <Route path="/admin/services" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
       <Route path="/admin/services/new" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
       <Route path="/admin/services/:id" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />

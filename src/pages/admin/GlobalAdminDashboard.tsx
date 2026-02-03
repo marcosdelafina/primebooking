@@ -216,6 +216,15 @@ export default function GlobalAdminDashboard() {
                                     variant="outline"
                                     size="sm"
                                     className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                    onClick={() => navigate('/admin/global/categories')}
+                                >
+                                    <LayoutGrid className="h-4 w-4 mr-2" />
+                                    Categorias
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-blue-200 text-blue-700 hover:bg-blue-50"
                                     onClick={() => navigate('/admin/global/planos')}
                                 >
                                     <Package className="h-4 w-4 mr-2" />

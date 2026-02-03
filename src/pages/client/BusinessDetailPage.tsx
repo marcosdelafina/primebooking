@@ -420,7 +420,7 @@ export default function BusinessDetailPage() {
   const openingTime = business.horario_abertura || '09:00';
   const closingTime = business.horario_fechamento || '18:00';
   const openDays = business.dias_funcionamento || ['seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
-  const rating = business.rating || 5.0;
+  const rating = Number(business.rating || 0).toFixed(1);
   const reviewsCount = business.avaliacoes || 0;
   const bio = business.descricao || 'Seja bem-vindo ao nosso estabelecimento. Agende seu horário com os melhores profissionais.';
 

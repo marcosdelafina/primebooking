@@ -99,6 +99,7 @@ export default function MinhaAssinatura() {
             const { data, error } = await supabase
                 .from('subscription_invoices')
                 .select('*')
+                .eq('empresa_id', empresaId)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;

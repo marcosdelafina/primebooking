@@ -140,6 +140,50 @@ export async function updateEmpresa(empresaId: string, data: any): Promise<any> 
     return updated;
 }
 
+// ============ Categorias de Empresa ============
+
+export async function getCategoriasEmpresa(): Promise<any[]> {
+    const { data, error } = await supabase
+        .from('categorias_empresa')
+        .select('*')
+        .order('ordem', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+}
+
+export async function createCategoriaEmpresa(data: any): Promise<any> {
+    const { data: newCat, error } = await supabase
+        .from('categorias_empresa')
+        .insert([data])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return newCat;
+}
+
+export async function updateCategoriaEmpresa(id: string, data: any): Promise<any> {
+    const { data: updated, error } = await supabase
+        .from('categorias_empresa')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return updated;
+}
+
+export async function deleteCategoriaEmpresa(id: string): Promise<void> {
+    const { error } = await supabase
+        .from('categorias_empresa')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
 // ============ Clientes ============
 
 export async function getClientes(empresaId: string): Promise<Cliente[]> {
