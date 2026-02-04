@@ -91,7 +91,8 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<ClientExplorePage />} />
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsOfService />} />
 
@@ -125,7 +126,7 @@ function AppRoutes() {
       <Route path="/admin/google-callback" element={<GoogleCallback />} />
 
       {/* Client Booking Routes (Public) */}
-      <Route path="/book" element={<ClientExplorePage />} />
+      <Route path="/book" element={<Navigate to="/" replace />} />
       <Route path="/book/:slug" element={<BusinessDetailPage />} />
 
       {/* Catch-all */}

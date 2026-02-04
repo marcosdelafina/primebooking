@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/landing" className="flex items-center gap-2">
               <div className="h-9 w-9 overflow-hidden rounded-lg shadow-sm">
                 <img src="/logo-p.png" alt="PrimeBooking Logo" className="h-full w-full object-cover" />
               </div>

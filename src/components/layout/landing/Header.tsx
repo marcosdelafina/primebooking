@@ -27,7 +27,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/landing" className="flex items-center gap-2">
           <div className="h-9 w-9 overflow-hidden rounded-lg shadow-sm">
             <img src="/logo-p.png" alt="PrimeBooking Logo" className="h-full w-full object-cover" />
           </div>
@@ -69,7 +69,7 @@ const Header = () => {
           </SheetTrigger>
           <SheetContent side="right" className="w-[300px] sm:w-[350px]">
             <div className="flex flex-col gap-6 pt-6">
-              <Link to="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
+              <Link to="/landing" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
                 <div className="h-9 w-9 overflow-hidden rounded-lg shadow-sm">
                   <img src="/logo-p.png" alt="PrimeBooking Logo" className="h-full w-full object-cover" />
                 </div>

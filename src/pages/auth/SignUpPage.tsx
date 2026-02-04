@@ -93,9 +93,14 @@ export default function SignUpPage() {
       <main className="flex-1 flex items-center justify-center px-6 py-8">
         <div className="max-w-md w-full space-y-6 animate-fade-in">
           {/* Title */}
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">Crie sua conta</h1>
-            <p className="text-muted-foreground">Comece a gerenciar seus agendamentos</p>
+          <div className="text-center space-y-8 pb-2">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl leading-tight">
+              Agendamentos <span className="text-gradient">simples, automáticos</span> e profissionais
+            </h1>
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold text-foreground">Crie sua conta</h1>
+              <p className="text-muted-foreground">Comece a gerenciar seus agendamentos</p>
+            </div>
           </div>
 
           {/* Form */}
