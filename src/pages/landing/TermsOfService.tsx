@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, FileText, Calendar } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const TermsOfService = () => {
@@ -8,16 +8,16 @@ const TermsOfService = () => {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Calendar className="h-5 w-5 text-primary-foreground" />
+          <Link to="/landing" className="flex items-center gap-2">
+            <div className="h-9 w-9 overflow-hidden rounded-lg shadow-sm">
+              <img src="/logo-p.png" alt="PrimeBooking Logo" className="h-full w-full object-cover" />
             </div>
             <span className="text-xl font-bold text-foreground">
               Prime<span className="text-primary">Booking</span>
             </span>
           </Link>
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/">
+            <Link to="/landing">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar
             </Link>
@@ -64,9 +64,9 @@ const TermsOfService = () => {
               </p>
               <p className="text-muted-foreground text-sm">
                 <strong>WhatsApp:</strong>{" "}
-                <a 
-                  href="https://wa.me/5519997006540" 
-                  target="_blank" 
+                <a
+                  href="https://wa.me/5519997006540"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
@@ -163,9 +163,9 @@ const TermsOfService = () => {
               </p>
               <p className="text-foreground font-medium flex items-center gap-2 mt-2">
                 📱 WhatsApp:{" "}
-                <a 
-                  href="https://wa.me/5519997006540" 
-                  target="_blank" 
+                <a
+                  href="https://wa.me/5519997006540"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >

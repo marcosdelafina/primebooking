@@ -55,7 +55,7 @@ const HeroSection = () => {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                Setup em 5 minutos
+                Configuração em 5 minutos
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-primary" />

@@ -48,7 +48,7 @@ const CTASection = () => {
           </div>
 
           <p className="text-sm text-white/60 mt-6">
-            Sem cartão de crédito • Setup em 5 minutos • Suporte incluído
+            Sem cartão de crédito • Configuração em 5 minutos • Suporte incluído
           </p>
         </div>
       </div>
