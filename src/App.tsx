@@ -6,8 +6,12 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AnimatedToastProvider } from "@/components/ui/animated-toast";
 
+// Landing Pages
+import LandingPage from "@/pages/landing/LandingPage";
+import PrivacyPolicy from "@/pages/landing/PrivacyPolicy";
+import TermsOfService from "@/pages/landing/TermsOfService";
+
 // Auth Pages
-import WelcomePage from "@/pages/auth/WelcomePage";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignUpPage from "@/pages/auth/SignUpPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
@@ -86,8 +90,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
+
       {/* Public Auth Routes */}
-      <Route path="/" element={<PublicRoute><WelcomePage /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
