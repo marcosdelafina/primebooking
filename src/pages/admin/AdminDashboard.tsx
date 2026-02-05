@@ -51,7 +51,7 @@ function MetricCard({
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           <Skeleton className="h-4 w-24 mb-2" />
           <Skeleton className="h-8 w-16 mb-2" />
           <Skeleton className="h-3 w-20" />
@@ -65,7 +65,7 @@ function MetricCard({
 
   return (
     <Card className="hover:shadow-soft transition-shadow">
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -111,7 +111,7 @@ function QuickAction({
     <Link to={href}>
       <Button
         variant="outline"
-        className="h-auto flex-col gap-2 py-4 px-6 hover:bg-primary hover:text-primary-foreground transition-colors"
+        className="h-auto flex-col gap-2 py-4 px-4 hover:bg-primary hover:text-primary-foreground transition-colors"
       >
         <Icon className="h-6 w-6" />
         <span className="text-sm font-medium">{label}</span>
@@ -153,20 +153,27 @@ function AppointmentItem({
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:shadow-card transition-shadow">
-      <div className="text-center min-w-[70px]">
+    <div className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:shadow-card transition-shadow">
+      <div className="text-center min-w-[65px] shrink-0 mt-1">
         <p className="text-lg font-bold text-primary">{time}</p>
         {date && <p className="text-[10px] text-muted-foreground font-medium uppercase">{date}</p>}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{clientName}</p>
+      <div className="flex-1 min-w-0 flex flex-col gap-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-medium truncate">{clientName}</p>
+          <Badge variant="outline" className={cn('shrink-0 hidden sm:inline-flex', statusColors[status])}>
+            {statusLabels[status] || status}
+          </Badge>
+        </div>
         <p className="text-sm text-muted-foreground truncate">
           {serviceName} • {professionalName}
         </p>
+        <div className="sm:hidden mt-0.5">
+          <Badge variant="outline" className={cn('text-[10px] py-0 h-5', statusColors[status])}>
+            {statusLabels[status] || status}
+          </Badge>
+        </div>
       </div>
-      <Badge variant="outline" className={cn('shrink-0', statusColors[status])}>
-        {statusLabels[status] || status}
-      </Badge>
     </div>
   );
 }
@@ -307,42 +314,42 @@ export default function AdminDashboard() {
 
         {/* Status Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+          <div className="bg-card border rounded-xl p-2 flex flex-col items-center justify-center text-center shadow-sm">
             <div className="h-8 w-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-600 mb-2">
               <AlertCircle className="h-4 w-4" />
             </div>
             <p className="text-2xl font-bold">{statusCounts.pendente}</p>
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Pendentes</p>
           </div>
-          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+          <div className="bg-card border rounded-xl p-2 flex flex-col items-center justify-center text-center shadow-sm">
             <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 mb-2">
               <CheckCircle2 className="h-4 w-4" />
             </div>
             <p className="text-2xl font-bold">{statusCounts.confirmado}</p>
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Confirmados</p>
           </div>
-          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+          <div className="bg-card border rounded-xl p-2 flex flex-col items-center justify-center text-center shadow-sm">
             <div className="h-8 w-8 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-600 mb-2">
               <Clock className="h-4 w-4" />
             </div>
             <p className="text-2xl font-bold">{statusCounts.em_andamento}</p>
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Em Curso</p>
           </div>
-          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+          <div className="bg-card border rounded-xl p-2 flex flex-col items-center justify-center text-center shadow-sm">
             <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center text-green-600 mb-2">
               <CheckCircle2 className="h-4 w-4" />
             </div>
             <p className="text-2xl font-bold">{statusCounts.concluido}</p>
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Concluídos</p>
           </div>
-          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+          <div className="bg-card border rounded-xl p-2 flex flex-col items-center justify-center text-center shadow-sm">
             <div className="h-8 w-8 rounded-full bg-red-500/10 flex items-center justify-center text-red-600 mb-2">
               <XCircle className="h-4 w-4" />
             </div>
             <p className="text-2xl font-bold">{statusCounts.cancelado}</p>
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Cancelados</p>
           </div>
-          <div className="bg-card border rounded-xl p-3 flex flex-col items-center justify-center text-center shadow-sm">
+          <div className="bg-card border rounded-xl p-2 flex flex-col items-center justify-center text-center shadow-sm">
             <div className="h-8 w-8 rounded-full bg-gray-500/10 flex items-center justify-center text-gray-600 mb-2">
               <User className="h-4 w-4" />
             </div>
@@ -353,10 +360,10 @@ export default function AdminDashboard() {
 
         {/* Quick Actions */}
         <Card>
-          <CardHeader>
+          <CardHeader className="p-4 pb-2">
             <CardTitle className="text-lg">Ações Rápidas</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <div className="flex flex-wrap gap-3">
               <QuickAction
                 icon={Calendar}
@@ -381,15 +388,15 @@ export default function AdminDashboard() {
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Today's Schedule */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
               <CardTitle className="text-lg">Próximos Agendamentos</CardTitle>
               <Link to="/admin/appointments">
-                <Button variant="ghost" size="sm" className="gap-1">
+                <Button variant="ghost" size="sm" className="gap-1 h-8 px-2">
                   Ver todos <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="p-4 pt-0 space-y-3">
               {isLoading ? (
                 [1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)
               ) : nextAppointments.length === 0 ? (
@@ -415,51 +422,51 @@ export default function AdminDashboard() {
 
           {/* Overview Stats */}
           <Card>
-            <CardHeader>
+            <CardHeader className="p-4 pb-2">
               <CardTitle className="text-lg">Visão Geral</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <CardContent className="p-4 pt-0 space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Scissors className="h-5 w-5 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-medium">Serviços Ativos</p>
-                    <p className="text-sm text-muted-foreground">Disponíveis para agendamento</p>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate text-sm sm:text-base">Serviços Ativos</p>
+                    <p className="text-xs text-muted-foreground truncate">Disponíveis para agendamento</p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-xl sm:text-2xl font-bold shrink-0">
                   {services.filter((s) => s.ativo).length}
                 </p>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Users className="h-5 w-5 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-medium">Profissionais Ativos</p>
-                    <p className="text-sm text-muted-foreground">Disponíveis para atendimento</p>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate text-sm sm:text-base">Profissionais Ativos</p>
+                    <p className="text-xs text-muted-foreground truncate">Disponíveis para atendimento</p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-xl sm:text-2xl font-bold shrink-0">
                   {professionals.filter((p) => p.ativo).length}
                 </p>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Calendar className="h-5 w-5 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-medium">Agendamentos Pendentes</p>
-                    <p className="text-sm text-muted-foreground">Aguardando confirmação</p>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate text-sm sm:text-base">Agendamentos Pendentes</p>
+                    <p className="text-xs text-muted-foreground truncate">Aguardando confirmação</p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-xl sm:text-2xl font-bold shrink-0">
                   {appointments.filter((a) => a.status === 'pendente').length}
                 </p>
               </div>

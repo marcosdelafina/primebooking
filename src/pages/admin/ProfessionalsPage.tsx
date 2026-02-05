@@ -123,7 +123,7 @@ function ProfessionalCard({
       'hover:shadow-md transition-all duration-200 border-border',
       !professional.ativo && 'opacity-60 bg-muted/30'
     )}>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <Avatar className="h-16 w-16 border-2 border-primary/5">

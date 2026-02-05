@@ -431,7 +431,7 @@ export default function AppointmentsPage() {
                             return (
                                 <div key={app.id} className="bg-card border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-sm transition-shadow">
                                     <div className="flex items-center gap-4">
-                                        <div className="hidden sm:flex flex-col items-center justify-center h-16 w-16 rounded-xl bg-primary/5 border border-primary/10">
+                                        <div className="flex flex-col items-center justify-center h-16 w-16 rounded-xl bg-primary/5 border border-primary/10 shrink-0">
                                             <span className="text-xs font-semibold text-primary uppercase">
                                                 {format(new Date(app.data_inicio), 'MMM', { locale: ptBR })}
                                             </span>

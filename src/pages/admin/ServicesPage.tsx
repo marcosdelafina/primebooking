@@ -86,7 +86,7 @@ function ServiceCard({
       'hover:shadow-soft transition-all',
       !service.ativo && 'opacity-60'
     )}>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
