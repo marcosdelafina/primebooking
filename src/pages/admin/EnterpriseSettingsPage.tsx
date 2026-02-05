@@ -27,6 +27,9 @@ export default function EnterpriseSettingsPage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const empresaId = user?.empresa_id || '';
+    const [openCategories, setOpenCategories] = React.useState(false);
+    const [openEstado, setOpenEstado] = React.useState(false);
+    const [openCidade, setOpenCidade] = React.useState(false);
 
     const { data: empresa, isLoading } = useQuery({
         queryKey: ['empresa', empresaId],
@@ -249,7 +252,7 @@ export default function EnterpriseSettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="categoria">Categorias do Estabelecimento</Label>
-                                    <Popover>
+                                    <Popover open={openCategories} onOpenChange={setOpenCategories}>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
@@ -291,6 +294,7 @@ export default function EnterpriseSettingsPage() {
                                                                         ? current.filter(c => c !== cat.nome)
                                                                         : [...current, cat.nome];
                                                                     form.setValue('categoria', next, { shouldValidate: true, shouldDirty: true });
+                                                                    setOpenCategories(false);
                                                                 }}
                                                             >
                                                                 <div className={cn(
@@ -513,7 +517,7 @@ export default function EnterpriseSettingsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="estado">Estado (UF)</Label>
-                                    <Popover>
+                                    <Popover open={openEstado} onOpenChange={setOpenEstado}>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
@@ -540,6 +544,7 @@ export default function EnterpriseSettingsPage() {
                                                                 onSelect={() => {
                                                                     form.setValue('estado', estado.sigla);
                                                                     form.setValue('cidade', '');
+                                                                    setOpenEstado(false);
                                                                 }}
                                                                 className="flex items-center gap-2"
                                                             >
@@ -561,7 +566,7 @@ export default function EnterpriseSettingsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="cidade">Cidade</Label>
-                                    <Popover>
+                                    <Popover open={openCidade} onOpenChange={setOpenCidade}>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
@@ -586,6 +591,7 @@ export default function EnterpriseSettingsPage() {
                                                                 value={municipio.nome_municipio}
                                                                 onSelect={() => {
                                                                     form.setValue('cidade', municipio.nome_municipio);
+                                                                    setOpenCidade(false);
                                                                 }}
                                                                 className="flex items-center gap-2"
                                                             >

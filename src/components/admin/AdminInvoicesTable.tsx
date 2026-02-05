@@ -467,6 +467,7 @@ export function AdminInvoicesTable() {
                                         setFilterStatus(prev =>
                                             prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
                                         );
+                                        setOpenStatusFilter(false);
                                     }}
                                 >
                                     <div className={cn(

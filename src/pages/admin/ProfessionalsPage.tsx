@@ -261,6 +261,7 @@ export default function ProfessionalsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Profissional | null>(null);
+  const [openStatusFilter, setOpenStatusFilter] = useState(false);
 
   const empresaId = user?.empresa_id || '';
 
@@ -529,7 +530,7 @@ export default function ProfessionalsPage() {
               </button>
             )}
           </div>
-          <Popover>
+          <Popover open={openStatusFilter} onOpenChange={setOpenStatusFilter}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full md:w-48 bg-card justify-between h-10 border-input px-3 py-2 text-sm">
                 <div className="flex items-center gap-2 truncate">
@@ -552,7 +553,10 @@ export default function ProfessionalsPage() {
                   <CommandEmpty>Não encontrado.</CommandEmpty>
                   <CommandGroup>
                     <CommandItem
-                      onSelect={() => setStatusFilter([])}
+                      onSelect={() => {
+                        setStatusFilter([]);
+                        setOpenStatusFilter(false);
+                      }}
                       className="flex items-center gap-2"
                     >
                       <Checkbox checked={statusFilter.length === 0} className="pointer-events-none" />
@@ -561,6 +565,7 @@ export default function ProfessionalsPage() {
                     <CommandItem
                       onSelect={() => {
                         setStatusFilter(prev => prev.includes('active') ? prev.filter(s => s !== 'active') : [...prev, 'active']);
+                        setOpenStatusFilter(false);
                       }}
                       className="flex items-center gap-2"
                     >
@@ -570,6 +575,7 @@ export default function ProfessionalsPage() {
                     <CommandItem
                       onSelect={() => {
                         setStatusFilter(prev => prev.includes('inactive') ? prev.filter(s => s !== 'inactive') : [...prev, 'inactive']);
+                        setOpenStatusFilter(false);
                       }}
                       className="flex items-center gap-2"
                     >

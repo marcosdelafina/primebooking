@@ -91,6 +91,10 @@ export default function AppointmentsPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [openStatusFilter, setOpenStatusFilter] = useState(false);
+    const [openClient, setOpenClient] = useState(false);
+    const [openProfessional, setOpenProfessional] = useState(false);
+    const [openServices, setOpenServices] = useState(false);
 
     const form = useForm<AgendamentoFormData>({
         resolver: zodResolver(agendamentoSchema),
@@ -349,7 +353,7 @@ export default function AppointmentsPage() {
                         />
                     </div>
                     <div className="flex gap-2">
-                        <Popover>
+                        <Popover open={openStatusFilter} onOpenChange={setOpenStatusFilter}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className="w-[180px] justify-between h-10 border-input bg-background px-3 py-2 text-sm">
                                     <div className="flex items-center gap-2 truncate">
@@ -370,7 +374,10 @@ export default function AppointmentsPage() {
                                         <CommandEmpty>Nenhum status encontrado.</CommandEmpty>
                                         <CommandGroup>
                                             <CommandItem
-                                                onSelect={() => setStatusFilter([])}
+                                                onSelect={() => {
+                                                    setStatusFilter([]);
+                                                    setOpenStatusFilter(false);
+                                                }}
                                                 className="flex items-center gap-2"
                                             >
                                                 <Checkbox checked={statusFilter.length === 0} className="pointer-events-none" />
@@ -385,6 +392,7 @@ export default function AppointmentsPage() {
                                                                 ? prev.filter(s => s !== key)
                                                                 : [...prev, key]
                                                         );
+                                                        setOpenStatusFilter(false);
                                                     }}
                                                     className="flex items-center gap-2"
                                                 >
@@ -427,9 +435,13 @@ export default function AppointmentsPage() {
                     ) : (
                         filteredAppointments.map((app: any) => {
                             const config = statusConfig[app.status as keyof typeof statusConfig] || statusConfig.pendente;
+                            const isLocked = ['cancelado', 'nao_compareceu'].includes(app.status);
 
                             return (
-                                <div key={app.id} className="bg-card border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-sm transition-shadow">
+                                <div key={app.id} className={cn(
+                                    "bg-card border border-border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all",
+                                    isLocked ? "opacity-75 grayscale-[0.2]" : "hover:shadow-sm"
+                                )}>
                                     <div className="flex items-center gap-4">
                                         <div className="flex flex-col items-center justify-center h-16 w-16 rounded-xl bg-primary/5 border border-primary/10 shrink-0">
                                             <span className="text-xs font-semibold text-primary uppercase">
@@ -480,8 +492,8 @@ export default function AppointmentsPage() {
                                     <div className="flex items-center gap-2 self-end md:self-center">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm">
-                                                    Mudar Status
+                                                <Button variant="outline" size="sm" disabled={isLocked}>
+                                                    {isLocked ? 'Status Finalizado' : 'Mudar Status'}
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
@@ -510,6 +522,8 @@ export default function AppointmentsPage() {
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => openEditDialog(app)}
+                                            disabled={isLocked}
+                                            title={isLocked ? "Este agendamento está finalizado e não pode ser editado" : "Editar"}
                                         >
                                             <Pencil className="h-4 w-4" />
                                         </Button>
@@ -538,7 +552,7 @@ export default function AppointmentsPage() {
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
                                             <FormLabel>Cliente</FormLabel>
-                                            <Popover>
+                                            <Popover open={openClient} onOpenChange={setOpenClient}>
                                                 <PopoverTrigger asChild>
                                                     <FormControl>
                                                         <Button
@@ -568,6 +582,7 @@ export default function AppointmentsPage() {
                                                                         value={client.nome}
                                                                         onSelect={() => {
                                                                             form.setValue("cliente_id", client.id);
+                                                                            setOpenClient(false);
                                                                         }}
                                                                         className="flex items-center gap-2"
                                                                     >
@@ -595,7 +610,7 @@ export default function AppointmentsPage() {
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
                                                 <FormLabel>Profissional</FormLabel>
-                                                <Popover>
+                                                <Popover open={openProfessional} onOpenChange={setOpenProfessional}>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
                                                             <Button
@@ -625,6 +640,7 @@ export default function AppointmentsPage() {
                                                                             value={prof.nome}
                                                                             onSelect={() => {
                                                                                 form.setValue("profissional_id", prof.id);
+                                                                                setOpenProfessional(false);
                                                                             }}
                                                                             className="flex items-center gap-2"
                                                                         >
@@ -650,7 +666,7 @@ export default function AppointmentsPage() {
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
                                                 <FormLabel>Serviços</FormLabel>
-                                                <Popover>
+                                                <Popover open={openServices} onOpenChange={setOpenServices}>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
                                                             <Button
@@ -696,6 +712,10 @@ export default function AppointmentsPage() {
                                                                                         ? current.filter(id => id !== svc.id)
                                                                                         : [...current, svc.id];
                                                                                     form.setValue("servicos_ids", next, { shouldValidate: true });
+                                                                                    // Note: For multi-select, we might NOT want to close immediately, 
+                                                                                    // but the user asked to close on selection. 
+                                                                                    // Usually multi-select stays open, but for "all dropdowns", I'll follow instructions.
+                                                                                    setOpenServices(false);
                                                                                 }}
                                                                                 className="flex items-center gap-2"
                                                                             >

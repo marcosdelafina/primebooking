@@ -623,6 +623,7 @@ export default function BusinessDetailPage() {
                                 setSelectedCategories(prev =>
                                   prev.length === categories.length ? [] : [...categories]
                                 );
+                                setPopoverOpen(false);
                               }}
                               className="flex items-center gap-2 font-medium"
                             >
@@ -642,6 +643,7 @@ export default function BusinessDetailPage() {
                                 value={category}
                                 onSelect={() => {
                                   toggleCategory(category);
+                                  setPopoverOpen(false);
                                 }}
                                 className="flex items-center gap-2"
                               >
