@@ -598,7 +598,7 @@ export default function ProfessionalsPage() {
               {searchQuery ? 'Tente ajustar sua busca ou filtros.' : 'Cadastre sua equipe para começar os agendamentos.'}
             </p>
             {!searchQuery && (
-              <Button onClick={openCreateForm} variant="outline" className="mt-8 border-blue-600 text-blue-600 hover:bg-blue-50">
+              <Button onClick={openCreateForm} className="mt-8 bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Profissional
               </Button>

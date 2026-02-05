@@ -235,14 +235,14 @@ export default function ClientsPage() {
                         ))}
                     </div>
                 ) : filteredClients.length === 0 ? (
-                    <div className="text-center py-20 bg-muted/30 rounded-2xl border-2 border-dashed border-muted">
+                    <div className="text-center py-20 bg-muted/20 rounded-2xl border-2 border-dashed border-muted">
                         <UserCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
                         <p className="text-lg font-medium">Nenhum cliente encontrado</p>
                         <p className="text-muted-foreground mt-1">
                             {searchQuery ? 'Tente ajustar seus filtros de busca.' : 'Comece cadastrando seu primeiro cliente.'}
                         </p>
                         {!searchQuery && (
-                            <Button onClick={openCreateForm} variant="outline" className="mt-6 border-blue-600 text-blue-600 hover:bg-blue-50">
+                            <Button onClick={openCreateForm} className="mt-6 bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                                 <Plus className="h-4 w-4 mr-2" />
                                 Cadastrar Cliente
                             </Button>

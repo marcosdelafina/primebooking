@@ -165,15 +165,13 @@ function ServiceCard({
 // Empty State Component
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="text-center py-16 px-4">
-      <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-        <Scissors className="h-10 w-10 text-muted-foreground" />
-      </div>
-      <h3 className="text-xl font-semibold mb-2">Nenhum serviço cadastrado</h3>
-      <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+    <div className="text-center py-20 bg-muted/20 rounded-2xl border-2 border-dashed border-muted">
+      <Scissors className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
+      <h3 className="text-xl font-semibold">Nenhum serviço cadastrado</h3>
+      <p className="text-muted-foreground mt-2 max-w-xs mx-auto mb-6">
         Comece cadastrando os serviços que sua empresa oferece para seus clientes.
       </p>
-      <Button onClick={onAdd}>
+      <Button onClick={onAdd} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
         <Plus className="h-4 w-4 mr-2" />
         Adicionar serviço
       </Button>
