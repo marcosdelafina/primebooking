@@ -159,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: {
             nome: data.nome,
             full_name: data.nome,
+            whatsapp: data.telefone,
             nome_estabelecimento: data.nomeEstabelecimento,
           },
         },
