@@ -145,9 +145,10 @@ export interface AuthUser {
   id: string;
   email: string;
   nome: string;
-  empresa_id: string;
-  role: Usuario['role'];
+  empresa_id?: string;
+  role?: Usuario['role'];
   is_admin_global: boolean;
+  is_client?: boolean;
 }
 
 // API Response types

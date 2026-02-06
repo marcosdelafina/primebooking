@@ -29,7 +29,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [originalUser, setOriginalUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (userId: string, email: string) => {
+  const fetchProfile = async (userId: string, email: string, metadata?: any) => {
+    // 1. Check if user is a client (end-customer)
+    const isClient = metadata?.is_client === true || metadata?.is_client === 'true';
+
+    if (isClient) {
+      const clientUser: AuthUser = {
+        id: userId,
+        email: email,
+        nome: metadata?.nome || metadata?.full_name || email.split('@')[0],
+        is_admin_global: false,
+        is_client: true
+      };
+      setUser(clientUser);
+      setOriginalUser(clientUser);
+      setIsLoading(false);
+      return;
+    }
+
     let retries = 3;
     let delay = 1000;
 
@@ -84,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        fetchProfile(session.user.id, session.user.email!);
+        fetchProfile(session.user.id, session.user.email!, session.user.user_metadata);
       } else {
         setIsLoading(false);
       }
@@ -94,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (session?.user) {
-          fetchProfile(session.user.id, session.user.email!);
+          fetchProfile(session.user.id, session.user.email!, session.user.user_metadata);
         } else {
           setUser(null);
           setIsLoading(false);
