@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getCategoriasEmpresa, createCategoriaEmpresa, updateCategoriaEmpresa, deleteCategoriaEmpresa } from '@/lib/supabase-services';
 import { toast } from 'sonner';
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
 export default function CategoriesManagementPage() {
     const navigate = useNavigate();
@@ -59,6 +60,9 @@ export default function CategoriesManagementPage() {
         queryKey: ['global-categories'],
         queryFn: getCategoriasEmpresa
     });
+
+    // Real-time Sync
+    useSupabaseRealtime('categorias_empresa', undefined, [['global-categories']]);
 
     // Mutations
     const mutation = useMutation({

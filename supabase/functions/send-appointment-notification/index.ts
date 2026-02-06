@@ -57,9 +57,9 @@ Deno.serve(async (req: Request) => {
             .eq('id', record.cliente_id)
             .maybeSingle();
 
-        if (clientError || !client?.email) {
-            console.log(`[send-appointment-notification] Notification skipped: Client [${record.cliente_id}] has no email or not found.`);
-            return new Response(JSON.stringify({ message: "Skipped: No email" }));
+        if (clientError || !client) {
+            console.error(`[send-appointment-notification] Error fetching client [${record.cliente_id}]:`, clientError);
+            return new Response(JSON.stringify({ error: "Client not found" }), { status: 404 });
         }
 
         // 2. Determine Notification Scenario
@@ -200,27 +200,34 @@ Deno.serve(async (req: Request) => {
       </html>
     `;
 
-        const result = await sendEmailWithRetry(resend, {
-            from: `"${empresa?.nome || 'PrimeBooking'}" <notificacoes@notifications.appsbuilding.com>`,
-            to: [client.email],
-            subject: scenarioConfig.subject,
-            html: emailHtml,
-        });
+        if (client.email) {
+            console.log(`[send-appointment-notification] Sending email to: ${client.email} (Scenario: ${scenario})`);
+            const result = await sendEmailWithRetry(resend, {
+                from: `"${empresa?.nome || 'PrimeBooking'}" <notificacoes@notifications.appsbuilding.com>`,
+                to: [client.email],
+                subject: scenarioConfig.subject,
+                html: emailHtml,
+            });
 
-        if (result.error) throw result.error;
+            if (result.error) {
+                console.error(`[send-appointment-notification] Resend Error for ${client.email}:`, result.error);
+            } else {
+                console.log(`[send-appointment-notification] Email sent successfully to: ${client.email}`);
 
-        console.log(`[send-appointment-notification] Email sent successfully to: ${client.email} (Scenario: ${scenario})`);
-
-        // Log to email_events
-        await supabaseClient.from('email_events').insert({
-            company_id: record.empresa_id,
-            type: `appointment_${scenario.toLowerCase()}`,
-            recipient_type: 'client',
-            status: 'sent',
-            resend_email_id: result.data?.id,
-            resend_event_type: 'email.sent',
-            payload: { email: client.email, agendamento_id: record.id, status: record.status }
-        });
+                // Log to email_events
+                await supabaseClient.from('email_events').insert({
+                    company_id: record.empresa_id,
+                    type: `appointment_${scenario.toLowerCase()}`,
+                    recipient_type: 'client',
+                    status: 'sent',
+                    resend_email_id: result.data?.id,
+                    resend_event_type: 'email.sent',
+                    payload: { email: client.email, agendamento_id: record.id, status: record.status }
+                });
+            }
+        } else {
+            console.log(`[send-appointment-notification] Email skipped: Client [${client.nome}] has no email.`);
+        }
 
         // =========================================================================
         // 5. WhatsApp Notification (Parallel / Async)

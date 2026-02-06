@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { getEmpresasPublicas, getCategoriasEmpresa } from '@/lib/supabase-services';
 import { LikeButton } from '@/components/LikeButton';
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
 // Helper to safely parse categories (handles legacy strings and double-encoded JSON)
 const parseCategories = (raw: any): string[] => {
@@ -163,6 +164,10 @@ export default function ClientExplorePage() {
     queryKey: ['global-categories'],
     queryFn: getCategoriasEmpresa
   });
+
+  // Real-time Sync
+  useSupabaseRealtime('empresas', undefined, [['public-businesses']]);
+  useSupabaseRealtime('categorias_empresa', undefined, [['global-categories']]);
 
   const categories = ['Todos', ...dbCategories.filter(c => c.ativo).map(c => c.nome)];
 

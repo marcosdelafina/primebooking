@@ -50,7 +50,9 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { LikeButton } from '@/components/LikeButton';
+import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 
 // Format helpers
 const formatCurrency = (value: number) => {
@@ -132,6 +134,12 @@ export default function BusinessDetailPage() {
   const billingInfo = Array.isArray(business?.billing) ? business?.billing[0] : business?.billing;
   const isSuspended = billingInfo?.billing_status === 'SUSPENSA';
 
+  // Real-time Sync
+  useSupabaseRealtime('empresas', business?.id, [['business', slug]]);
+  useSupabaseRealtime('servicos', business?.id, [['services', business?.id]]);
+  useSupabaseRealtime('profissionais', business?.id, [['professionals', business?.id]]);
+  useSupabaseRealtime('avaliacoes_empresa', business?.id, [['business-reviews', business?.id]]);
+
   // Booking state
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState<1 | 2 | 3 | 4>(1);
@@ -144,7 +152,7 @@ export default function BusinessDetailPage() {
   // Client info state
   const [clientInfo, setClientInfo] = useState({
     nome: '',
-    telefone: '+55 ',
+    telefone: '',
     email: '',
   });
 
@@ -353,7 +361,7 @@ export default function BusinessDetailPage() {
     setSelectedServices([]);
     setSelectedTime(null);
     setSelectedProfessionalId('any');
-    setClientInfo({ nome: '', telefone: '+55 ', email: '' });
+    setClientInfo({ nome: '', telefone: '', email: '' });
   };
 
   const handleStartBooking = () => {
@@ -367,10 +375,10 @@ export default function BusinessDetailPage() {
     } else if (bookingStep === 2 && selectedTime) {
       setBookingStep(3);
     } else if (bookingStep === 3) {
-      if (!clientInfo.nome || !clientInfo.telefone) {
+      if (!clientInfo.nome || !clientInfo.telefone || !clientInfo.email) {
         toast({
           title: 'Campos obrigatórios',
-          description: 'Por favor, preencha seu nome e telefone.',
+          description: 'Por favor, preencha nome, telefone e e-mail.',
           variant: 'destructive'
         });
         return;
@@ -1123,14 +1131,11 @@ export default function BusinessDetailPage() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="telefone">Telefone / WhatsApp</Label>
-                      <Input
+                      <PhoneInput
                         id="telefone"
-                        placeholder="+55 (00) 00000-0000"
+                        placeholder="(00) 00000-0000"
                         value={clientInfo.telefone}
-                        onChange={(e) => {
-                          const formatted = formatPhoneHelper(e.target.value);
-                          setClientInfo(prev => ({ ...prev, telefone: formatted }));
-                        }}
+                        onChange={(value) => setClientInfo(prev => ({ ...prev, telefone: value }))}
                       />
                       <p className="text-[10px] text-muted-foreground">Informe o DDD e o número do seu celular.</p>
                     </div>
@@ -1144,7 +1149,7 @@ export default function BusinessDetailPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">E-mail (opcional)</Label>
+                      <Label htmlFor="email">E-mail</Label>
                       <Input
                         id="email"
                         type="email"
