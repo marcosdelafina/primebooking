@@ -436,7 +436,7 @@ export default function AppointmentsPage() {
                     ) : (
                         filteredAppointments.map((app: any) => {
                             const config = statusConfig[app.status as keyof typeof statusConfig] || statusConfig.pendente;
-                            const isLocked = ['cancelado', 'nao_compareceu'].includes(app.status);
+                            const isLocked = ['cancelado', 'nao_compareceu', 'concluido'].includes(app.status);
 
                             return (
                                 <div key={app.id} className={cn(
