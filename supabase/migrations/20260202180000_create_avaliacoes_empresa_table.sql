@@ -84,7 +84,7 @@ BEGIN
     WHERE id = COALESCE(NEW.empresa_id, OLD.empresa_id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 CREATE TRIGGER tr_update_business_rating
 AFTER INSERT OR UPDATE OF status OR DELETE ON avaliacoes_empresa

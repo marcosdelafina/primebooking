@@ -16,6 +16,7 @@ interface AuthContextType {
 
 interface SignUpData {
   nome: string;
+  nomeEstabelecimento: string;
   email: string;
   telefone: string;
   password: string;
@@ -140,7 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             nome: data.nome,
-            full_name: data.nome, // For Dashboard compatibility
+            full_name: data.nome,
+            nome_estabelecimento: data.nomeEstabelecimento,
           },
         },
       });

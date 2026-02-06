@@ -11,7 +11,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 -- Drop trigger if exists to ensure idempotency during development
 DROP TRIGGER IF EXISTS tr_appointment_status_lock ON public.agendamentos;

@@ -1,0 +1,2 @@
+[functions.handle-client-registration]
+verify_jwt = false

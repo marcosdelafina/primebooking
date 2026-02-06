@@ -44,7 +44,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getPlanos, createPlano, updatePlano, getPlanoPrecos, createPlanoPreco, deletePlanoPreco } from '@/lib/supabase-services';
-import { formatCurrencyBRL, cn } from '@/lib/utils';
+import { formatCurrencyBRL } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';

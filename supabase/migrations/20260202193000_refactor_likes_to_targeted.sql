@@ -37,7 +37,7 @@ BEGIN
 
     RETURN v_total;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 4. Update permissions
 GRANT EXECUTE ON FUNCTION increment_likes(TEXT, TEXT) TO anon, authenticated;

@@ -41,6 +41,7 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 // Sign up form schema
 export const signUpSchema = z.object({
   nome: nameSchema,
+  nomeEstabelecimento: z.string().trim().min(2, 'Nome do estabelecimento é obrigatório').max(100),
   email: emailSchema,
   telefone: phoneSchema,
   password: passwordSchema,
@@ -161,6 +162,7 @@ export const clienteSchema = z.object({
   telefone: phoneSchema,
   email: z.string().trim().email('Email inválido').optional().or(z.literal('')),
   notas: z.string().trim().max(500).optional(),
+  status: z.enum(['ativo', 'inativo']).optional()
 });
 
 export type ClienteFormData = z.infer<typeof clienteSchema>;

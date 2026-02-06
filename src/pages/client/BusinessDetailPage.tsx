@@ -42,7 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { getEmpresaBySlug, getServicos, getProfissionais, createAgendamento, getClienteByTelefone, createCliente, updateCliente, getBusinessReviews, submitBusinessReview } from '@/lib/supabase-services';
+import { getEmpresaBySlug, getServicos, getProfissionais, createAgendamento, getClienteByTelefone, getClienteByEmail, getAgendamentosByDateRange, getBusinessReviews, submitBusinessReview, registerClient } from '@/lib/supabase-services';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { generateTimeSlots, getNext7Days } from '@/lib/booking-data';
 import type { Servico } from '@/types/entities';
@@ -71,6 +71,18 @@ const formatDuration = (minutes: number) => {
   return `${mins}min`;
 };
 
+const formatToHHmm = (date: Date) => {
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+};
+
+const addMinutesToHHmm = (hhmm: string, minutes: number) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  const total = h * 60 + m + minutes;
+  const newH = Math.floor(total / 60) % 24;
+  const newM = total % 60;
+  return `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`;
+};
+
 const formatDateFull = (date: Date) => {
   return date.toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -85,17 +97,7 @@ const getDayName = (date: Date) => {
   return days[date.getDay()];
 };
 
-const formatPhoneHelper = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  // Brazilian digits: 55 (country) + 2 (DDD) + 9 (Mobile) = 13 digits total
-  // We keep +55 always
-  const phone = digits.startsWith('55') ? digits.slice(2) : digits;
 
-  if (phone.length === 0) return '+55 ';
-  if (phone.length <= 2) return `+55 (${phone}`;
-  if (phone.length <= 7) return `+55 (${phone.slice(0, 2)}) ${phone.slice(2)}`;
-  return `+55 (${phone.slice(0, 2)}) ${phone.slice(2, 7)}-${phone.slice(7, 11)}`;
-};
 
 export default function BusinessDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -106,39 +108,27 @@ export default function BusinessDetailPage() {
   const { data: business, isLoading: isBizLoading } = useQuery({
     queryKey: ['business', slug],
     queryFn: () => slug ? getEmpresaBySlug(slug) : null,
-    enabled: !!slug
+    enabled: !!slug,
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 1000 * 60, // 1 minute heartbeat
   });
 
   // 2. Fetch Services once we have business ID
   const { data: services = [], isLoading: isSvcLoading } = useQuery({
     queryKey: ['services', business?.id],
     queryFn: () => getServicos(business.id),
-    enabled: !!business?.id
+    enabled: !!business?.id,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 60,
   });
-
   // 3. Fetch Professionals
   const { data: professionals = [], isLoading: isProLoading } = useQuery({
     queryKey: ['professionals', business?.id],
     queryFn: () => getProfissionais(business.id),
-    enabled: !!business?.id
+    enabled: !!business?.id,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 60,
   });
-
-  // 4. Fetch Reviews
-  const { data: bReviews = [], isLoading: isRevLoading } = useQuery({
-    queryKey: ['business-reviews', business?.id],
-    queryFn: () => getBusinessReviews(business.id),
-    enabled: !!business?.id
-  });
-
-  const isLoading = isBizLoading || isSvcLoading || isProLoading || isRevLoading;
-  const billingInfo = Array.isArray(business?.billing) ? business?.billing[0] : business?.billing;
-  const isSuspended = billingInfo?.billing_status === 'SUSPENSA';
-
-  // Real-time Sync
-  useSupabaseRealtime('empresas', business?.id, [['business', slug]]);
-  useSupabaseRealtime('servicos', business?.id, [['services', business?.id]]);
-  useSupabaseRealtime('profissionais', business?.id, [['professionals', business?.id]]);
-  useSupabaseRealtime('avaliacoes_empresa', business?.id, [['business-reviews', business?.id]]);
 
   // Booking state
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -148,12 +138,73 @@ export default function BusinessDetailPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [isEmailPreFilled, setIsEmailPreFilled] = useState(false);
+
+  // 3.5. De-duplicate Professionals (preventing leaks and UI clones)
+  const uniqueProfessionals = useMemo(() => {
+    const seen = new Set();
+    return professionals.filter(p => {
+      const identifier = `${p.nome}-${p.email}`.toLowerCase();
+      if (seen.has(identifier)) return false;
+      seen.add(identifier);
+      return true;
+    });
+  }, [professionals]);
+
+  // 3.6. Filter Professionals who can perform ALL selected services
+  const qualifiedProfessionals = useMemo(() => {
+    if (selectedServices.length === 0) return uniqueProfessionals;
+    return uniqueProfessionals.filter(pro => {
+      // Check if this professional has all selected service IDs in their servicos_ids
+      const proServiceIds = pro.servicos_ids || [];
+      return selectedServices.every(svc => proServiceIds.includes(svc.id));
+    });
+  }, [uniqueProfessionals, selectedServices]);
+
+  // 4. Fetch Reviews
+  const { data: bReviews = [], isLoading: isRevLoading } = useQuery({
+    queryKey: ['business-reviews', business?.id],
+    queryFn: () => getBusinessReviews(business.id),
+    enabled: !!business?.id,
+    staleTime: 1000 * 60, // Reviews can be more stale
+    refetchInterval: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const isLoading = isBizLoading || isSvcLoading || isProLoading || isRevLoading;
+  const billingInfo = Array.isArray(business?.billing) ? business?.billing[0] : business?.billing;
+  const isSuspended = billingInfo?.billing_status === 'SUSPENSA';
 
   // Client info state
   const [clientInfo, setClientInfo] = useState({
     nome: '',
     telefone: '',
     email: '',
+  });
+
+  // Total price and duration
+  const totalPrice = selectedServices.reduce((sum, s) => sum + s.preco, 0);
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duracao_min, 0);
+
+  // Real-time Sync
+  useSupabaseRealtime('empresas', business?.id, [['business', slug]]);
+  useSupabaseRealtime('servicos', business?.id, [['services', business?.id]]);
+  useSupabaseRealtime('profissionais', business?.id, [['professionals', business?.id]]);
+  useSupabaseRealtime('avaliacoes_empresa', business?.id, [['business-reviews', business?.id]]);
+  useSupabaseRealtime('agendamentos', business?.id, [['appointments-day', business?.id, selectedDate.toISOString().split('T')[0]]]);
+
+  // 5. Fetch Appointments for the selected day to filter slots
+  const { data: dayAppointments = [] } = useQuery({
+    queryKey: ['appointments-day', business?.id, selectedDate.toISOString().split('T')[0]],
+    queryFn: async () => {
+      const start = new Date(selectedDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(selectedDate);
+      end.setHours(23, 59, 59, 999);
+      return getAgendamentosByDateRange(business!.id, start, end);
+    },
+    enabled: !!business?.id && !!selectedDate,
+    staleTime: 1000 * 10, // Slots are critical, keep it low (10s)
+    refetchInterval: 1000 * 30, // 30s heartbeat for slots
   });
 
   // Review state
@@ -214,26 +265,80 @@ export default function BusinessDetailPage() {
       business.horario_fechamento || '18:00'
     );
 
-    // 2. Filter by professional availability if selected
+    // 2. Filter by professional availability and existing appointments
+    const slotDuration = totalDuration || 30; // Use selected services duration or 30m default
+
     if (selectedProfessionalId !== 'any') {
-      const professional = professionals.find(p => p.id === selectedProfessionalId);
+      const professional = qualifiedProfessionals.find(p => p.id === selectedProfessionalId);
       if (professional && professional.disponibilidade) {
         const dayLabels = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
         const dayLabel = dayLabels[selectedDate.getDay()];
         const proAvailability = professional.disponibilidade[dayLabel] || [];
 
-        return baseSlots.filter(slot => {
-          // Check if slot falls within any professional availability range
-          return proAvailability.some(av => {
+        return baseSlots.filter(slotStartTime => {
+          const slotEndTime = addMinutesToHHmm(slotStartTime, slotDuration);
+
+          // A. Check if the ENTIRE duration fits within any professional availability range
+          const fitsInAvailability = proAvailability.some(av => {
             if (!av.ativo) return false;
-            return slot >= av.inicio && slot < av.fim;
+            // Slot must start and end within the availability block
+            return slotStartTime >= av.inicio && slotEndTime <= av.fim;
           });
+
+          if (!fitsInAvailability) return false;
+
+          // B. Check if slot overlaps with ANY existing appointment
+          const isTaken = dayAppointments.some(app => {
+            if (app.profissional_id !== selectedProfessionalId) return false;
+
+            const appStartTime = formatToHHmm(new Date(app.data_inicio));
+            const appEndTime = formatToHHmm(new Date(app.data_fim));
+
+            // Overlap check: (StartA < EndB) && (EndA > StartB)
+            return slotStartTime < appEndTime && slotEndTime > appStartTime;
+          });
+
+          return !isTaken;
         });
       }
+    } else {
+      // "Qualquer profissional" - Only remove slot if NO QUALIFIED professional is free for the ENTIRE duration
+      const activeQualifiedPros = qualifiedProfessionals.filter(p => p.ativo);
+      if (activeQualifiedPros.length === 0) return []; // No one qualified can do this!
+
+      return baseSlots.filter(slotStartTime => {
+        const slotEndTime = addMinutesToHHmm(slotStartTime, slotDuration);
+
+        // Find if there's at least one qualified professional who is both available AND not busy for the WHOLE duration
+        return activeQualifiedPros.some(pro => {
+          const dayLabels = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+          const dayLabel = dayLabels[selectedDate.getDay()];
+          const proAvailability = pro.disponibilidade?.[dayLabel] || [];
+
+          // 1. Available for whole duration?
+          const isAvailable = proAvailability.some(av => {
+            if (!av.ativo) return false;
+            return slotStartTime >= av.inicio && slotEndTime <= av.fim;
+          });
+          if (!isAvailable) return false;
+
+          // 2. Not busy during the whole duration?
+          const isBusy = dayAppointments.some(app => {
+            if (app.profissional_id !== pro.id) return false;
+            const appStartTime = formatToHHmm(new Date(app.data_inicio));
+            const appEndTime = formatToHHmm(new Date(app.data_fim));
+
+            // Overlap check: (StartA < EndB) && (EndA > StartB)
+            return slotStartTime < appEndTime && slotEndTime > appStartTime;
+          });
+
+          return !isBusy;
+        });
+      });
     }
 
     return baseSlots;
-  }, [selectedDate, business, selectedProfessionalId, professionals]);
+  }, [selectedDate, business, selectedProfessionalId, qualifiedProfessionals, dayAppointments, totalDuration]);
 
   // Grouped services by category
   const groupedServices = useMemo(() => {
@@ -277,26 +382,27 @@ export default function BusinessDetailPage() {
     );
   };
 
-  // Total price and duration
-  const totalPrice = selectedServices.reduce((sum, s) => sum + s.preco, 0);
-  const totalDuration = selectedServices.reduce((sum, s) => sum + s.duracao_min, 0);
-
   const queryClient = useQueryClient();
   const bookingMutation = useMutation({
     mutationFn: async () => {
       if (!business || !selectedTime) throw new Error('Missing data');
 
-      // 1. Get or Create Client
-      let client = await getClienteByTelefone(business.id, clientInfo.telefone);
-      if (!client) {
-        client = await createCliente(business.id, {
-          nome: clientInfo.nome,
-          telefone: clientInfo.telefone,
-          email: clientInfo.email
-        });
-      } else if (clientInfo.email && !client.email) {
-        // Update email if it was previously empty
-        await updateCliente(client.id, { email: clientInfo.email });
+      // 1. Register/Get Global Client & Link to Business
+      const client = await registerClient(business.id, {
+        nome: clientInfo.nome,
+        telefone: clientInfo.telefone,
+        email: clientInfo.email,
+        allowAuthCreation: true
+      });
+
+      // Diagnostic log
+      console.log('[Booking] Client registration response:', client);
+
+      const finalClientId = client.id || (client as any).clientId;
+
+      if (!finalClientId) {
+        console.error('[Booking] Failed to obtain client ID after registration');
+        throw new Error('Não foi possível identificar seu cadastro. Por favor, tente novamente.');
       }
 
       // 2. Create Agendamento
@@ -308,7 +414,7 @@ export default function BusinessDetailPage() {
       endDateTime.setMinutes(endDateTime.getMinutes() + totalDuration);
 
       return createAgendamento(business.id, {
-        cliente_id: client.id,
+        cliente_id: finalClientId,
         profissional_id: selectedProfessionalId === 'any' ? undefined : selectedProfessionalId,
         servico_id: selectedServices[0].id,
         servicos_ids: selectedServices.map(s => s.id),
@@ -327,34 +433,62 @@ export default function BusinessDetailPage() {
       resetBooking();
     },
     onError: (error: any) => {
+      const isDuplicate = error.message?.includes('409') || error.status === 409 || error.code === 'DUPLICATE_CLIENT';
       toast({
-        title: 'Erro ao agendar',
-        description: error.message || 'Ocorreu um erro ao processar seu agendamento.',
+        title: isDuplicate ? 'Cadastro já existente' : 'Erro ao agendar',
+        description: isDuplicate
+          ? 'Você já possui um cadastro neste estabelecimento. Tente agendar usando seus dados habituais ou entre em contato.'
+          : (error.message || 'Ocorreu um erro ao processar seu agendamento.'),
         variant: 'destructive',
       });
     }
   });
 
-  // Auto-fetch client name by phone
+  // Auto-fetch client name by phone or email
   useEffect(() => {
-    const fetchClientName = async () => {
+    const fetchClientData = async () => {
       const cleanPhone = clientInfo.telefone.replace(/\D/g, '');
-      // +55 plus at least 10 digits (e.g., +55 11 99999999)
-      if (cleanPhone.length >= 12 && business?.id) {
-        try {
-          const client = await getClienteByTelefone(business.id, clientInfo.telefone.trim());
-          if (client && client.nome && !clientInfo.nome) {
-            setClientInfo(prev => ({ ...prev, nome: client.nome, email: client.email || prev.email }));
-          }
-        } catch (error) {
-          console.error('Error fetching client:', error);
+      const hasValidPhone = cleanPhone.length >= 10; // More flexible than 12
+      const hasValidEmail = clientInfo.email && clientInfo.email.includes('@') && clientInfo.email.length > 5;
+
+      if (!business?.id || (!hasValidPhone && !hasValidEmail)) return;
+
+      try {
+        let client = null;
+
+        // Try phone first
+        if (hasValidPhone) {
+          client = await getClienteByTelefone(business.id, clientInfo.telefone.trim());
         }
+
+        // Try email if phone didn't return a client
+        if (!client && hasValidEmail) {
+          client = await getClienteByEmail(business.id, clientInfo.email.trim());
+        }
+
+        if (client && (client.nome || client.email)) {
+          console.log('[Booking] Auto-filled client data:', client);
+          setClientInfo(prev => ({
+            ...prev,
+            nome: client.nome || prev.nome,
+            email: client.email || prev.email,
+            telefone: client.telefone || prev.telefone
+          }));
+
+          if (client.email) {
+            setIsEmailPreFilled(true);
+          }
+        } else {
+          setIsEmailPreFilled(false);
+        }
+      } catch (error) {
+        console.error('Error fetching client data:', error);
       }
     };
 
-    const timer = setTimeout(fetchClientName, 500);
+    const timer = setTimeout(fetchClientData, 600);
     return () => clearTimeout(timer);
-  }, [clientInfo.telefone, business?.id]);
+  }, [clientInfo.telefone, clientInfo.email, business?.id]);
 
   const resetBooking = () => {
     setBookingStep(1);
@@ -362,6 +496,7 @@ export default function BusinessDetailPage() {
     setSelectedTime(null);
     setSelectedProfessionalId('any');
     setClientInfo({ nome: '', telefone: '', email: '' });
+    setIsEmailPreFilled(false);
   };
 
   const handleStartBooking = () => {
@@ -1029,7 +1164,7 @@ export default function BusinessDetailPage() {
                             Qualquer profissional
                           </span>
                         </button>
-                        {professionals.filter(p => p.ativo).map((pro) => (
+                        {qualifiedProfessionals.filter(p => p.ativo).map((pro) => (
                           <button
                             key={pro.id}
                             onClick={() => {
@@ -1148,17 +1283,19 @@ export default function BusinessDetailPage() {
                         onChange={(e) => setClientInfo(prev => ({ ...prev, nome: e.target.value }))}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">E-mail</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="para receber confirmações"
-                        value={clientInfo.email}
-                        onChange={(e) => setClientInfo(prev => ({ ...prev, email: e.target.value }))}
-                      />
-                      <p className="text-[10px] text-muted-foreground">Enviaremos uma cópia do agendamento para este e-mail.</p>
-                    </div>
+                    {!isEmailPreFilled && (
+                      <div className="space-y-2">
+                        <Label htmlFor="email">E-mail</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="para receber confirmações"
+                          value={clientInfo.email}
+                          onChange={(e) => setClientInfo(prev => ({ ...prev, email: e.target.value }))}
+                        />
+                        <p className="text-[10px] text-muted-foreground">Enviaremos uma cópia do agendamento para este e-mail.</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
@@ -1221,7 +1358,7 @@ export default function BusinessDetailPage() {
                           <span className="truncate">
                             {selectedProfessionalId === 'any'
                               ? 'Qualquer profissional'
-                              : professionals.find(p => p.id === selectedProfessionalId)?.nome}
+                              : qualifiedProfessionals.find(p => p.id === selectedProfessionalId)?.nome}
                           </span>
                         </div>
                       </div>

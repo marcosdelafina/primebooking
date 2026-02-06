@@ -73,7 +73,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 CREATE TRIGGER tr_check_plano_valores_overlap
     BEFORE INSERT OR UPDATE ON public.plano_valores

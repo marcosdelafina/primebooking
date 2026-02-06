@@ -148,9 +148,10 @@ export default function AppointmentsPage() {
         enabled: !!empresaId && isFormOpen,
     });
 
-    // Realtime Subscriptions
+    // Realtime
     useSupabaseRealtime('agendamentos', empresaId, [['agendamentos', empresaId]]);
-    useSupabaseRealtime('clientes', empresaId, [['clientes', empresaId]]);
+    useSupabaseRealtime('clientes_empresa', empresaId, [['agendamentos', empresaId]]);
+    useSupabaseRealtime('clientes_global', undefined, [['agendamentos', empresaId]]);
     useSupabaseRealtime('profissionais', empresaId, [['profissionais', empresaId]]);
     useSupabaseRealtime('servicos', empresaId, [['servicos', empresaId]]);
 

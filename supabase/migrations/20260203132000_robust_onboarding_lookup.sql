@@ -70,6 +70,5 @@ BEGIN
         NOW()
     );
 
-    RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

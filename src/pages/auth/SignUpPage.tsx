@@ -34,6 +34,7 @@ export default function SignUpPage() {
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       nome: '',
+      nomeEstabelecimento: '',
       email: '',
       telefone: '',
       password: '',
@@ -44,6 +45,7 @@ export default function SignUpPage() {
   const onSubmit = async (data: SignUpFormData) => {
     const result = await signUp({
       nome: data.nome,
+      nomeEstabelecimento: data.nomeEstabelecimento,
       email: data.email,
       telefone: data.telefone,
       password: data.password,
@@ -81,11 +83,10 @@ export default function SignUpPage() {
       </div>
       {/* Header */}
       <header className="p-6">
-        <div className="flex flex-col items-center gap-2 mb-8">
-          <Link to="/" className="h-12 w-12 rounded-xl overflow-hidden flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2 mb-2">
+          <Link to="/" className="h-12 w-12 rounded-xl overflow-hidden flex items-center justify-center transition-transform hover:scale-110">
             <img src="/favicon.png" alt="PrimeBooking Logo" className="h-full w-full object-cover" />
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight">Crie sua conta</h1>
         </div>
       </header>
 
@@ -153,6 +154,23 @@ export default function SignUpPage() {
                       <FormControl>
                         <PhoneInput
                           placeholder="+5511999999999"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="nomeEstabelecimento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do estabelecimento</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: Barbearia do João"
                           {...field}
                         />
                       </FormControl>

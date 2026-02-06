@@ -41,7 +41,7 @@ BEGIN
 
     RETURN v_total;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- RLS Policies
 ALTER TABLE likes_counter ENABLE ROW LEVEL SECURITY;

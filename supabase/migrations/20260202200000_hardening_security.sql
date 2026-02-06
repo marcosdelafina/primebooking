@@ -8,7 +8,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = '';
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = public;
 
 -- 2. handle_updated_at
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
@@ -40,7 +40,7 @@ BEGIN
     WHERE id = COALESCE(NEW.empresa_id, OLD.empresa_id);
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 4. handle_new_user
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -70,7 +70,7 @@ BEGIN
 
     RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 5. increment_global_likes
 CREATE OR REPLACE FUNCTION public.increment_global_likes(p_session_id TEXT)
@@ -93,7 +93,7 @@ BEGIN
 
     RETURN v_total;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 6. increment_likes
 CREATE OR REPLACE FUNCTION public.increment_likes(p_target_id TEXT, p_session_id TEXT)

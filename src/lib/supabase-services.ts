@@ -188,89 +188,199 @@ export async function deleteCategoriaEmpresa(id: string): Promise<void> {
 
 export async function getClientes(empresaId: string): Promise<Cliente[]> {
     const { data, error } = await supabase
-        .from('clientes')
-        .select('*')
+        .from('clientes_empresa')
+        .select(`
+            *,
+            global:clientes_global(*)
+        `)
         .eq('empresa_id', empresaId)
-        .order('nome');
+        .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+
+    // Flatten the join result for convenience matching the interface
+    // Prioritize local data from clientes_empresa if available
+    return (data || []).map(ce => ({
+        ...ce,
+        nome: ce.nome || ce.global?.nome,
+        email: ce.email || ce.global?.email,
+        telefone: ce.telefone || ce.global?.telefone
+    }));
 }
 
 export async function getClienteByTelefone(empresaId: string, telefone: string): Promise<Cliente | null> {
     const rawPhone = telefone.trim();
-    const normalizedPhone = '+' + rawPhone.replace(/\D/g, '');
+    let normalizedPhone = rawPhone.replace(/\D/g, '');
 
-    // 1. Try normalized search
-    let { data, error } = await supabase
-        .from('clientes')
+    // Auto-add +55 for BR numbers if missing (10 or 11 digits)
+    if (normalizedPhone.length >= 10 && normalizedPhone.length <= 11 && !normalizedPhone.startsWith('55')) {
+        normalizedPhone = '55' + normalizedPhone;
+    }
+
+    // Prepend + if missing
+    if (!normalizedPhone.startsWith('+')) {
+        normalizedPhone = '+' + normalizedPhone;
+    }
+
+    // 1. Try global lookup first to find the identity
+    const { data: globalClient, error: globalError } = await supabase
+        .from('clientes_global')
         .select('*')
-        .eq('empresa_id', empresaId)
         .eq('telefone', normalizedPhone)
         .maybeSingle();
 
-    if (error) throw error;
+    if (globalError) throw globalError;
+    if (!globalClient) return null;
 
-    // 2. Fallback to raw search for historical "dirty" data
-    if (!data && rawPhone !== normalizedPhone) {
-        const { data: dirtyData, error: dirtyError } = await supabase
-            .from('clientes')
-            .select('*')
-            .eq('empresa_id', empresaId)
-            .eq('telefone', rawPhone)
-            .maybeSingle();
+    // 2. See if there's a link to THIS company
+    const { data: companyLink, error: linkError } = await supabase
+        .from('clientes_empresa')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .eq('cliente_global_id', globalClient.id)
+        .maybeSingle();
 
-        if (dirtyError) throw dirtyError;
+    if (linkError) throw linkError;
 
-        if (dirtyData) {
-            // Found a dirty record! Update it to normalized format for future efficiency
-            const { data: updated, error: updateError } = await supabase
-                .from('clientes')
-                .update({ telefone: normalizedPhone })
-                .eq('id', dirtyData.id)
-                .select()
-                .single();
-
-            if (!updateError) return updated;
-            return dirtyData;
-        }
-    }
-
-    return data;
+    // 3. Merge and return
+    // Prioritize local data
+    return {
+        ...(companyLink || {}),
+        id: companyLink?.id || '', // id will be empty if not linked yet, but we have global data
+        cliente_global_id: globalClient.id,
+        nome: companyLink?.nome || globalClient.nome,
+        email: companyLink?.email || globalClient.email,
+        telefone: companyLink?.telefone || globalClient.telefone,
+        empresa_id: empresaId,
+        status: companyLink?.status || 'ativo'
+    };
 }
 
-export async function createCliente(empresaId: string, data: Partial<Cliente>): Promise<Cliente> {
-    const normalizedPhone = data.telefone ? '+' + data.telefone.replace(/\D/g, '') : undefined;
-    const { data: newCliente, error } = await supabase
-        .from('clientes')
-        .insert([{ ...data, empresa_id: empresaId, telefone: normalizedPhone }])
-        .select()
-        .single();
+export async function getClienteByEmail(empresaId: string, email: string): Promise<Cliente | null> {
+    // 1. Try global lookup first
+    const { data: globalClient, error: globalError } = await supabase
+        .from('clientes_global')
+        .select('*')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
 
-    if (error) throw error;
-    return newCliente;
+    if (globalError) throw globalError;
+    if (!globalClient) return null;
+
+    // 2. See if there's a link to THIS company
+    const { data: companyLink, error: linkError } = await supabase
+        .from('clientes_empresa')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .eq('cliente_global_id', globalClient.id)
+        .maybeSingle();
+
+    if (linkError) throw linkError;
+
+    // 3. Merge and return
+    // Prioritize local data
+    return {
+        ...(companyLink || {}),
+        id: companyLink?.id || '',
+        cliente_global_id: globalClient.id,
+        nome: companyLink?.nome || globalClient.nome,
+        email: companyLink?.email || globalClient.email,
+        telefone: companyLink?.telefone || globalClient.telefone,
+        empresa_id: empresaId,
+        status: companyLink?.status || 'ativo'
+    };
+}
+
+/**
+ * Handles complex client registration via Edge Function
+ * This will:
+ * 1. Check/Create auth.users (without password)
+ * 2. Check/Create clientes_global
+ * 3. Link to clientes_empresa
+ * 4. Trigger activation email
+ */
+export async function registerClient(empresaId: string, data: {
+    nome: string;
+    email?: string;
+    telefone: string;
+    notas?: string;
+    googleContactId?: string;
+    allowAuthCreation?: boolean;
+    isManualRegistration?: boolean;
+}): Promise<Cliente> {
+    const { data: response, error } = await supabase.functions.invoke('handle-client-registration', {
+        body: {
+            empresaId,
+            ...data
+        }
+    });
+
+    if (error) {
+        // Supabase Edge Function errors often contain the JSON body in context
+        // We try to extract the specific error message and code to show to the user
+        try {
+            const body = await (error as any).context?.json();
+            if (body) {
+                error.message = body.error || error.message;
+                (error as any).code = body.code || (error as any).code;
+                (error as any).status = (error as any).context?.status || 400;
+            }
+        } catch (e) {
+            // If parsing fails, use the original error
+            console.warn('[registerClient] Failed to parse error context:', e);
+        }
+        throw error;
+    }
+    return response;
+}
+
+export async function createCliente(empresaId: string, data: {
+    nome: string;
+    email?: string;
+    telefone: string;
+    notas?: string;
+}): Promise<Cliente> {
+    return registerClient(empresaId, {
+        ...data,
+        isManualRegistration: true
+    });
 }
 
 export async function updateCliente(id: string, data: Partial<Cliente>): Promise<Cliente> {
-    const updateData = { ...data };
-    if (updateData.telefone) {
-        updateData.telefone = '+' + updateData.telefone.replace(/\D/g, '');
-    }
-    const { data: updatedCliente, error } = await supabase
-        .from('clientes')
-        .update(updateData)
+    // Update ONLY empresa data by default to allow local overrides
+    const { id: _, created_at, empresa_id, cliente_global_id, ...empresaData } = data;
+
+    // 1. Update company-specific link data
+    const { data: updatedEmpresa, error: empresaError } = await supabase
+        .from('clientes_empresa')
+        .update(empresaData)
         .eq('id', id)
         .select()
         .single();
 
-    if (error) throw error;
-    return updatedCliente;
+    if (empresaError) throw empresaError;
+
+    // 2. Fetch current global data to return merged object
+    const { data: globalData, error: globalError } = await supabase
+        .from('clientes_global')
+        .select('*')
+        .eq('id', updatedEmpresa.cliente_global_id)
+        .single();
+
+    if (globalError) throw globalError;
+
+    return {
+        ...updatedEmpresa,
+        nome: updatedEmpresa.nome || globalData.nome,
+        email: updatedEmpresa.email || globalData.email,
+        telefone: updatedEmpresa.telefone || globalData.telefone
+    };
 }
 
 export async function deleteCliente(id: string): Promise<void> {
     const { error } = await supabase
-        .from('clientes')
-        .delete()
+        .from('clientes_empresa')
+        .update({ status: 'inativo' })
         .eq('id', id);
 
     if (error) throw error;
@@ -283,12 +393,42 @@ export async function getAgendamentos(empresaId: string): Promise<any[]> {
         .from('agendamentos')
         .select(`
             *,
-            cliente:clientes(id, nome, telefone),
+            cliente:clientes_empresa(
+                id,
+                global:clientes_global(nome, telefone)
+            ),
             profissional:profissionais(id, nome),
             servico:servicos(id, nome, duracao_min, preco)
         `)
         .eq('empresa_id', empresaId)
         .order('data_inicio', { ascending: false });
+
+    if (error) throw error;
+
+    // Flatten client data for backward compatibility
+    return (data || []).map(item => ({
+        ...item,
+        cliente: item.cliente ? {
+            id: item.cliente.id,
+            nome: item.cliente.global?.nome,
+            telefone: item.cliente.global?.telefone
+        } : null
+    }));
+}
+
+export async function getAgendamentosByDateRange(
+    empresaId: string,
+    start: Date,
+    end: Date
+): Promise<Agendamento[]> {
+    const { data, error } = await supabase
+        .from('agendamentos')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .neq('status', 'cancelled')
+        .gte('data_inicio', start.toISOString())
+        .lte('data_inicio', end.toISOString())
+        .order('data_inicio', { ascending: true });
 
     if (error) throw error;
     return data || [];

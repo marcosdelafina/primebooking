@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { useSupabaseRealtime } from '@/hooks/useSupabaseRealtime';
 import { useMemo } from 'react';
 
+
 // Metric Card Component
 function MetricCard({
   title,
@@ -209,7 +210,8 @@ export default function AdminDashboard() {
 
   // Realtime Subscriptions
   useSupabaseRealtime('agendamentos', empresaId, [['agendamentos', empresaId]]);
-  useSupabaseRealtime('clientes', empresaId, [['clientes', empresaId]]);
+  useSupabaseRealtime('clientes_empresa', empresaId, [['clientes', empresaId]]);
+  useSupabaseRealtime('clientes_global', undefined, [['clientes', empresaId]]);
   useSupabaseRealtime('profissionais', empresaId, [['profissionais', empresaId]]);
   useSupabaseRealtime('servicos', empresaId, [['servicos', empresaId]]);
 
@@ -270,6 +272,8 @@ export default function AdminDashboard() {
     appointments.filter(app => isSameDay(parseISO(app.data_inicio), today)).length,
     [appointments]
   );
+
+
 
   return (
     <AdminLayout>

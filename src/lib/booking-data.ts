@@ -308,11 +308,7 @@ export function generateTimeSlots(
     }
 
     const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-
-    // Randomly mark some slots as unavailable (for demo)
-    if (Math.random() > 0.3) {
-      slots.push(timeString);
-    }
+    slots.push(timeString);
   }
 
   return slots;

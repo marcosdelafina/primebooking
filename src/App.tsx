@@ -43,7 +43,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 0, // Invalidate cache immediately on navigation for real-time feel
       retry: 1,
     },
   },

@@ -51,16 +51,25 @@ Deno.serve(async (req: Request) => {
         }
 
         // 1. Get Client Details
-        const { data: client, error: clientError } = await supabaseClient
-            .from('clientes')
-            .select('nome, email, telefone')
+        const { data: clientData, error: clientError } = await supabaseClient
+            .from('clientes_empresa')
+            .select(`
+                id,
+                clientes_global (
+                    nome,
+                    email,
+                    telefone
+                )
+            `)
             .eq('id', record.cliente_id)
             .maybeSingle();
 
-        if (clientError || !client) {
+        if (clientError || !clientData || !clientData.clientes_global) {
             console.error(`[send-appointment-notification] Error fetching client [${record.cliente_id}]:`, clientError);
             return new Response(JSON.stringify({ error: "Client not found" }), { status: 404 });
         }
+
+        const client = clientData.clientes_global;
 
         // 2. Determine Notification Scenario
         let scenario = '';

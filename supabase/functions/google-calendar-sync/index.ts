@@ -82,7 +82,18 @@ serve(async (req) => {
         const calendarId = prof.google_calendar_id || "primary";
 
         // Prepare Google Event
-        const { data: client } = await supabase.from("clientes").select("nome").eq("id", record.cliente_id).maybeSingle();
+        const { data: clientData } = await supabase
+            .from("clientes_empresa")
+            .select(`
+                id,
+                clientes_global (
+                    nome
+                )
+            `)
+            .eq("id", record.cliente_id)
+            .maybeSingle();
+
+        const clientName = clientData?.clientes_global?.nome || "Cliente";
 
         // Fetch services (support both multi and single for compatibility)
         let svcList = [];
@@ -120,9 +131,9 @@ serve(async (req) => {
         }[record.status] || record.status;
 
         const event = {
-            summary: `${client?.nome} - ${svcNames}`,
+            summary: `${clientName} - ${svcNames}`,
             location: address,
-            description: `${client?.nome}, seu horário é das ${startTime} até ${endTime}\nProfissional: ${prof.nome}\nServiços: ${svcNames}\nValor Total: R$ ${totalPreco.toFixed(2)}\nStatus: ${statusLabel}\n\n${record.notas ? `Notas: ${record.notas}\n\n` : ''}Agendamento realizado via PrimeBooking`,
+            description: `${clientName}, seu horário é das ${startTime} até ${endTime}\nProfissional: ${prof.nome}\nServiços: ${svcNames}\nValor Total: R$ ${totalPreco.toFixed(2)}\nStatus: ${statusLabel}\n\n${record.notas ? `Notas: ${record.notas}\n\n` : ''}Agendamento realizado via PrimeBooking`,
             start: { dateTime: record.data_inicio },
             end: { dateTime: record.data_fim },
         };

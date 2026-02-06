@@ -57,11 +57,10 @@ export default function LoginPage() {
       </div>
       {/* Header */}
       <header className="p-6">
-        <div className="flex flex-col items-center gap-2 mb-8">
-          <Link to="/" className="h-12 w-12 rounded-xl overflow-hidden flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2 mb-2">
+          <Link to="/" className="h-12 w-12 rounded-xl overflow-hidden flex items-center justify-center transition-transform hover:scale-110">
             <img src="/favicon.png" alt="PrimeBooking Logo" className="h-full w-full object-cover" />
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight">PrimeBooking</h1>
         </div>
       </header>
 

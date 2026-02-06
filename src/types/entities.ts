@@ -46,15 +46,27 @@ export interface Usuario {
   created_at: string;
 }
 
+export interface ClienteGlobal {
+  id: string;
+  auth_user_id?: string;
+  email: string;
+  nome?: string;
+  telefone?: string;
+  created_at: string;
+}
+
 export interface Cliente {
   id: string;
   empresa_id: string;
-  nome: string;
-  telefone: string; // E.164 format
-  email?: string;
-  google_contact_id?: string;
+  cliente_global_id: string;
+  status: 'ativo' | 'inativo';
   notas?: string;
+  google_contact_id?: string;
   created_at: string;
+  // Included from join for convenience
+  email?: string;
+  nome?: string;
+  telefone?: string;
 }
 
 export interface Servico {

@@ -157,6 +157,8 @@ export const mockClientes: Cliente[] = [
   {
     id: 'cli-001',
     empresa_id: 'emp-001',
+    cliente_global_id: 'cg-001',
+    status: 'ativo',
     nome: 'Fernanda Lima',
     telefone: '+5511987654321',
     email: 'fernanda@email.com',
@@ -165,6 +167,8 @@ export const mockClientes: Cliente[] = [
   {
     id: 'cli-002',
     empresa_id: 'emp-001',
+    cliente_global_id: 'cg-002',
+    status: 'ativo',
     nome: 'Roberto Mendes',
     telefone: '+5511912345678',
     email: 'roberto@email.com',
@@ -174,6 +178,8 @@ export const mockClientes: Cliente[] = [
   {
     id: 'cli-003',
     empresa_id: 'emp-001',
+    cliente_global_id: 'cg-003',
+    status: 'ativo',
     nome: 'Patricia Souza',
     telefone: '+5511955556666',
     created_at: '2024-02-10T10:00:00Z',
