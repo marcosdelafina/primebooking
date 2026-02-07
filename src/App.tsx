@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AnimatedToastProvider } from "@/components/ui/animated-toast";
+import { Analytics } from "@vercel/analytics/react";
 
 // Landing Pages
 import LandingPage from "@/pages/landing/LandingPage";
@@ -145,6 +146,7 @@ const App = () => (
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <AppRoutes />
             </BrowserRouter>
+            <Analytics />
           </AnimatedToastProvider>
         </TooltipProvider>
       </AuthProvider>
