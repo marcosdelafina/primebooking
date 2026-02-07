@@ -195,6 +195,15 @@ const PrivacyPolicy = () => {
       <footer className="border-t py-8">
         <div className="container text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} PrimeBooking. Todos os direitos reservados.</p>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <Link to="/privacy" className="text-xs hover:text-primary transition-colors">
+              Política de Privacidade
+            </Link>
+            <span className="text-muted-foreground/30">•</span>
+            <Link to="/terms" className="text-xs hover:text-primary transition-colors">
+              Termos de Uso
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

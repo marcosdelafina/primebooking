@@ -290,6 +290,15 @@ export default function ClientExplorePage() {
           <p className="text-muted-foreground text-sm">
             © {new Date().getFullYear()} PrimeBooking. A plataforma definitiva para agendamentos online.
           </p>
+          <div className="flex items-center justify-center gap-4 mt-4">
+            <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              Política de Privacidade
+            </Link>
+            <span className="text-muted-foreground/30">•</span>
+            <Link to="/terms" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              Termos de Uso
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
