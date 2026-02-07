@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AnimatedToastProvider } from "@/components/ui/animated-toast";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // Landing Pages
 import LandingPage from "@/pages/landing/LandingPage";
@@ -144,6 +146,38 @@ const App = () => (
             <Sonner />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <AppRoutes />
+              <VercelAnalytics
+                beforeSend={(event) => {
+                  const url = new URL(event.url);
+                  const sensitiveParams = [
+                    "token",
+                    "access_token",
+                    "api_key",
+                    "secret",
+                    "password",
+                    "code",
+                    "state",
+                  ];
+
+                  let hasChanges = false;
+                  sensitiveParams.forEach((param) => {
+                    if (url.searchParams.has(param)) {
+                      url.searchParams.delete(param);
+                      hasChanges = true;
+                    }
+                  });
+
+                  if (hasChanges) {
+                    return {
+                      ...event,
+                      url: url.toString(),
+                    };
+                  }
+
+                  return event;
+                }}
+              />
+              <SpeedInsights />
             </BrowserRouter>
           </AnimatedToastProvider>
         </TooltipProvider>

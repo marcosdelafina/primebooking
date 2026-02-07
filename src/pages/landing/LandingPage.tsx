@@ -7,6 +7,7 @@ import CategoriesSection from "@/components/landing/CategoriesSection";
 import PricingSection from "@/components/landing/PricingSection";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
 import CTASection from "@/components/landing/CTASection";
+import VideoSection from "@/components/landing/VideoSection";
 
 const LandingPage = () => {
   return (
@@ -18,6 +19,7 @@ const LandingPage = () => {
         <CategoriesSection />
         <PricingSection />
         <ShowcaseSection />
+        <VideoSection />
         <CTASection />
       </main>
       <Footer />
