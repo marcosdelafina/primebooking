@@ -22,6 +22,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { signUpSchema, type SignUpFormData } from '@/lib/validations';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { BorderBeam } from '@/components/magicui/border-beam';
+import { SparklesText } from '@/components/magicui/sparkles-text';
+
+
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -96,8 +100,11 @@ export default function SignUpPage() {
           {/* Title */}
           <div className="text-center space-y-8 pb-2">
             <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl leading-tight">
-              Agendamentos <span className="text-gradient">simples, automáticos</span> e profissionais
+              <SparklesText className="text-foreground">
+                Agendamentos <span className="text-gradient">simples, automáticos</span> e profissionais
+              </SparklesText>
             </h1>
+
             <div className="space-y-1">
               <h1 className="text-2xl font-bold text-foreground">Crie sua conta</h1>
               <p className="text-muted-foreground">Comece a gerenciar seus agendamentos</p>
@@ -105,7 +112,9 @@ export default function SignUpPage() {
           </div>
 
           {/* Form */}
-          <div className="bg-card rounded-2xl shadow-card p-8">
+          <div className="bg-card rounded-2xl shadow-card p-8 relative overflow-hidden">
+            <BorderBeam size={300} duration={15} delay={7} />
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-5">
                 <FormField
@@ -272,13 +281,11 @@ export default function SignUpPage() {
             <Button
               variant="outline"
               type="button"
-              className="w-full h-11"
+              className="w-full h-11 bg-white text-black border-[#e5e5e5] hover:bg-gray-50 hover:text-black transition-colors"
               disabled={isLoading}
               onClick={() => signInWithGoogle()}
             >
-              <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-              </svg>
+              <svg aria-label="Google logo" className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g><path d="m0 0H512V512H0" fill="#fff"></path><path fill="#34a853" d="M153 292c30 82 118 95 171 60h62v48A192 192 0 0190 341"></path><path fill="#4285f4" d="m386 400a140 175 0 0053-179H260v74h102q-7 37-38 57"></path><path fill="#fbbc02" d="m90 341a208 200 0 010-171l63 49-12 37-0 73"></path><path fill="#ea4335" d="m153 219c22-69 116-109 179-50l55-54c-78-75-230-72-297 55"></path></g></svg>
               Criar conta com Google
             </Button>
           </div>
